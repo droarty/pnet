@@ -1,0 +1,625 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Provides a "cteReportTemplate" node type.
+ */
+
+/**
+ * Implementation of hook_node_info().
+ */
+ 
+function cteReportTemplate_node_info() {
+  // We return an array since a module can define multiple node types.
+  // We're only defining one node type, type 'cteReportTemplate'.
+  return array(
+    'cteReportTemplate' => array(
+      'name' => t('CTE Report Template'), // Required.
+      'module' => 'cteReportTemplate',  // Required.
+      'description' => t('Create a CTE Report Template!'), // Required.
+      'has_title' => TRUE,
+      'title_label' => t('Template Name'),
+      'has_body' => TRUE,
+      'body_label' => t('Report Template header... can include html.'),
+      'min_word_count' => 2,
+      'locked' => TRUE
+    )
+  );
+}
+
+// Example - disable the page at node/add for all
+// nonsuperuser users.
+
+function cteReportTemplate_menu_alter(&$callbacks) { 
+  // If the user does not have 'administer nodes' permission, 
+  // disable the cteReportTemplate menu item by setting its access callback to FALSE. 
+  if (!user_access('administer nodes')) { 
+    $callbacks['node/add/cteReportTemplate']['access callback'] = FALSE; 
+    // Must unset access arguments or Drupal will use user_access() 
+    // as a default access callback. 
+    unset($callbacks['node/add/cteReportTemplate']['access arguments']); 
+  } 
+} 
+// 
+
+/**
+ * Implementation of hook_perm().
+ */
+function cteReportTemplate_perm() {
+  return array('create cteReportTemplate', 'edit own cteReportTemplate', 'edit any cteReportTemplate', 'delete own cteReportTemplate', 'delete any cteReportTemplate');
+}
+
+/**
+ * Implementation of hook_access().
+ */
+function cteReportTemplate_access($op, $node, $account) {
+  $is_author = $account->uid == $node->uid;
+  switch ($op) {
+    case 'create':
+      // Allow if user's role has 'create cteReportTemplate' permission.
+      return user_access('create cteReportTemplate', $account);
+
+    case 'update':
+      // Allow if user's role has 'edit own cteReportTemplate' permission and user is
+      // the author; or if the user's role has 'edit any cteReportTemplate' permission.
+      return user_access('edit own cteReportTemplate', $account) && is_author ||
+        user_access('edit any cteReportTemplate', $account);
+    case 'delete':
+      // Allow if user's role has 'delete own cteReportTemplate' permission and user is
+      // the author; or if the user's role has 'delete any cteReportTemplate' permission.
+      return user_access('delete own cteReportTemplate', $account) && $is_author ||
+        user_access('delete any cteReportTemplate', $account);
+  }
+}
+
+/**
+ * Implementation of hook_form().
+ */
+function cteReportTemplate_form($node) {
+  // Get metadata for this node type
+  // (we use it for labeling title and body fields).
+  // We defined this in cteReportTemplate_node_info().
+  $type = node_get_types('type', $node);
+
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -5,
+    '#maxlength' => 255,
+  );
+  $form['body_filter']['body'] = array(
+    '#type' => 'textarea',
+    '#title' => check_plain($type->body_label),
+    '#default_value' => $node->body,
+    '#rows' => 3,
+    '#required' => FALSE
+  );
+  $form['body_filter']['filter'] = filter_form($node->format);
+  $form['templateObject'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Report Template'),
+	'#description'=>t('can be a mix of php and ?> html <?php...<br>The following variables are available:<strong> $node, $grp["title"], $grp["dbtag"], $grps</strong> array of possible $grp objects.  Also the following tools are available: <strong>$appendTitle</strong> is a javascript string that will change the title of the page to append a source document title if we are in a source. <strong> $groupChooser</strong> is a string with a drop down box in it for choosing $grp.  <strong>makeDataSetInJS</strong>(dataname, querystring,[aoColumns], [schema]) is a function to make a dataset in Javascript from a query, the schema is optional and defaults to cte, the aoColumns describes columns per dataTables.  <strong>queryReplace9s</strong>(queryString, replaceValue) is a function that will check valitity of replaceValue and then replace any 9=9 instances in the queryString, if replaceValue has an = sign, it is assumed to be a valid replacement statenment, otherwise it is assumed to be a list of program names and will convert to "program in (replaceValue)".  <strong>getURLParam($nm)</strong> will return any parameter $nm passed through the url and an empty string if not found.'),
+    '#required' => FALSE,
+    '#default_value' => isset($node->templateObject) ? $node->templateObject : '',
+    '#weight' => 5,
+	'#rows'=>29,
+  );
+	$r=  db_query("SELECT cast(if(depth is null,node.title,concat('Bk:',repeat('_ ',depth-1),node.title)) as char)lab,
+ n.nid, m.mlid, m.plid, depth, p1,p2,p3, weight
+ from cteReportTemplate n
+ left join node on n.nid=node.nid
+left join book b on n.nid=b.nid
+left join menu_links m on b.mlid=m.mlid
+where
+ ( n.templateSrc is null or n.templateSrc=0) and n.nid!=%d
+order by bid,p1,p2,p3,p4,p5,p6,weight,link_title", $node->nid);
+$ops=array('null'=>'None');
+while($rw=db_fetch_object($r)){
+	$ops[$rw->nid]=$rw->lab;
+}
+  $form['templateSrc']=array(
+  	'#type'=>'select',
+  	'#title'=>t('Select template source:'),
+  	'#default_value'=>($node->templateSrc?$node->templateSrc:'null'),
+  	'#options'=>$ops,
+  	'#description'=>t('Select a template to serve as the source for this report... or write your own below.'),
+  	'#type'=>'select',
+  );
+  return $form;
+}
+
+/**
+ * Implementation of hook_validate().
+ */
+function cteReportTemplate_validate($node) {
+  if (isset($node->templateObject)) $node->templateObject=str_replace(" ","",$node->templateObject);
+/*  // Enforce the use of a comma for lists
+  if (isset($node->templateObject) && strpos($node->templateObject,",")) ==FALSE) {
+    $type = node_get_types('type', $node);
+    form_set_error('templateObject', t('The database tag of your @type should be a comma separated list of single word tags no spaces it. @dump', array('@type' => $type->name,'@dump'=>implode(',',str_word_count($node->templateObject,1,'_')))));
+  }
+  */
+}
+
+/**
+ * Implementation of hook_insert().
+ */
+function cteReportTemplate_insert($node) {
+  db_query("INSERT INTO {cteReportTemplate} (nid, vid, templateObject, templateSrc) VALUES (%d, %d, '%s',%d)",
+    $node->nid, $node->vid, $node->templateObject, $node->templateSrc);
+}
+
+/**
+ * Implementation of hook_update().
+ */
+function cteReportTemplate_update($node) {
+  if ($node->revision) {
+    // New revision; treat it as a new record.
+    cteReportTemplate_insert($node);
+  }
+  else {
+    db_query("UPDATE {cteReportTemplate} SET templateSrc=%d, templateObject = '%s' WHERE vid = %d",
+      $node->templateSrc,$node->templateObject, $node->vid);
+  }
+}
+
+/**
+ * Implementation of hook_delete().
+ */
+function cteReportTemplate_delete(&$node) {
+  // Delete the related information we were saving for this node.
+  db_query('DELETE FROM {cteReportTemplate} WHERE nid = %d', $node->nid);
+}
+
+/**
+ * Implementation of hook_load().
+ */
+function cteReportTemplate_load($node) {
+  return db_fetch_object(db_query('SELECT templateObject, templateSrc FROM {cteReportTemplate} WHERE vid = %d',
+    $node->vid));
+}
+
+/**
+ * Implementation of hook_view().
+ */
+function cteReportTemplate_view($node, $teaser = FALSE, $page = FALSE) {
+  // If $teaser is FALSE, the entire node is being displayed.
+  if (!$teaser) {
+    // Use Drupal's default node view.
+    $node = node_prepare($node, $teaser);
+
+    // Now add the templateObject.
+    // (Comment this line out when using node-cteReportTemplate.tpl.php.)
+    $node->content['templateObject'] = array(
+      '#value' => theme('cteReportTemplate_templateObject', $node),
+      '#weight' => 2,
+      );
+      // */
+ //  global $dbtag;
+   //$dbtag=$_GET['dbtag'];
+  }
+
+  // If $teaser is true, node is being displayed as a teaser,
+  // such as on a node listing page. We omit the templateObject in this case.
+  if ($teaser) {
+    // Use Drupal's default node view.
+    $node = node_prepare($node, $teaser);
+  }
+
+  return $node;
+}
+
+/**
+ * Implementation of hook_theme().
+ * We declare cteReportTemplate_templateObject so Drupal will look for a function
+ * named theme_cteReportTemplate_templateObject().
+ */
+function cteReportTemplate_theme() {
+  return array(
+    'cteReportTemplate_templateObject' => array(
+      'arguments' => array('node'),
+    ),
+  );
+}
+//* Comment out because we're using node-cteReportTemplate.tpl.php instead.
+function theme_cteReportTemplate_templateObject($node) {
+   $syntaxOK= eval('return true;' . $node->templateObject);
+  //this parses out the php delimiters and returns appropriate eval content... 
+  if(!$syntaxOK) $output = "Error in syntax...";
+  else {
+    //prepare variables available to php script...
+	global $firstDataSet;
+	$firstDataSet=true;
+	$grp=array();
+	$grps=array();
+	$cnt=0;
+	$dbtag="";
+	if(false){
+		//is this part of a cteGroup?  if not, then change to false... 
+		$r=  db_query('SELECT group_nid, n.title, dbtag from {og_ancestry} o left join {node} n  on o.group_nid=n.nid left join {cteGroup} g on o.group_nid=g.nid WHERE o.nid = %d and g.dbtag is not null', $node->nid);
+		if($rw=db_fetch_object($r)){
+			$grps[$rw->dbtag]=array("title"=>"All ".$rw->title,"dbtag"=>$rw->dbtag);
+			$grp=$grps[$rw->dbtag];
+			$groupChooser.="";
+			if(strpos($rw->dbtag,'=')===FALSE){
+				//this is a group tag or list of tags, so add it to the 'all' group...
+				if(strpos($rw->dbtag,",")!==FALSE){
+					$egrp=explode(",",$rw->dbtag);
+					foreach($egrp as $egr){
+						$grps[$egr]=array("title"=>$egr." only","dbtag"=>$egr);
+						$cnt++;
+					}
+				};
+			};
+		};
+		$dbtag=getURLParam('dbtag');
+		if($grps[$dbtag]) {
+			$grps[$dbtag]['selected']=true;
+			$grp=$grps[$dbtag];
+		};
+		if(count($grps)>0) {
+			$groupChooser.="Choose program(s):<select id='dbtag'>";
+			foreach($grps as $key=>$gr){
+				$groupChooser.="<option value=\"".urlencode($gr["dbtag"])."\"";
+				$groupChooser.=((array_key_exists("selected",$gr))?" selected ":"");
+				$groupChooser.=">".$gr["title"]."</option>";
+			};
+			$groupChooser.="</select><sc"."ript>$(function(){\$('#dbtag').change(function(){var seltx=$(this).find('option:selected')[0].value;setLocationParam('dbtag',seltx);return;var x=window.location.href;if(x.indexOf('dbtag=')>-1) x=x.substr(0,x.indexOf('dbtag=')+6)+seltx;else if(x.indexOf('?')==-1) x+='?dbtag='+seltx; else x+='&dbtag='+seltx;window.location.href=x;});});</sc"."ript>\n";
+		};
+	};//end cteGroup...	
+	//done preparing local variables, now work with template...
+	drupal_set_html_head('<style type="text/css" title="currentStyle">
+				@import "/sites/all/modules/custom/cteReportTemplateMedia/css/ui.all.css";
+			</style>
+			<style type="text/css" title="currentStyle">
+				@import "/sites/all/modules/custom/cteReportTemplateMedia/css/dataTable.css";
+			</style>
+			<style type="text/css" title="currentStyle">
+				@import "/sites/all/modules/custom/cteReportTemplateMedia/css/TableTools.css";
+			</style>
+			<style type="text/css" title="currentStyle">
+				@import "/sites/all/modules/custom/cteReportTemplateMedia/css/jquery.popup.css";
+			</style>
+			<style type="text/css" title="currentStyle">
+				@import "/sites/all/modules/custom/cteReportTemplateMedia/css/ui.combobox.css";
+			</style>
+			<style type="text/css" title="currentStyle">
+				@import "/sites/all/modules/custom/cteReportTemplateMedia/css/jquery.autocomplete.css";
+			</style>
+			<script>var gtbExternal="";</script>
+	');
+	 $outp=$node->templateObject;
+	 $ind=strpos($outp,"<?");
+	 //if template starts with html then change it to start with php...
+	 if($ind!=false&&$ind<strpos($outp,"?>")) $outp=" ?>"+$outp;
+	 //if there is a template source, then append that to the template Object... and append the title to this title
+	 $bksrc=getURLParam('report');
+	 $appendTitle="";
+	 $src=$node->templateSrc;
+	 if($src){
+	 	if($bksrc&&$bksrc!=$src) $tmp=db_fetch_object(db_query("select * from node n left join cteReportTemplate t on n.nid=t.nid left join book b on n.nid=b.nid where n.nid=%d and b.bid=%d",$bksrc, $src));
+		else $tmp=db_fetch_object(db_query("select * from node n left join cteReportTemplate t on n.nid=t.nid where n.nid=%d",$src));
+		if($tmp) {
+			$outp.=$tmp->templateObject;
+			$appendTitle="<scr"."ipt>document.title=\"".str_replace('"',"'",$node->title." - ".$tmp->title)."\";$('.title').text(\"".str_replace('"',"'",$node->title." - ".$tmp->title)."\");</scr"."ipt>";
+		}
+		else {
+			//this could be an error or someone modified the url to try and get a node that is not part of the book... 
+			$src="";
+			$bksrc="";
+		};
+	 }
+     while(!(strpos($outp, "?>")===false)){
+	   $ind=strpos($outp,"?>");
+	   $part1=substr($outp,0,$ind);
+	   $output.=eval($part1);
+	   $outp=substr($outp,$ind+2);
+	   $ind=strpos($outp,"<?");
+	   if($ind===false) $ind=strlen($outp);
+	   $output.=eval(" return <<<EX_PA_ND_ME\n".substr($outp,0,$ind)."\nEX_PA_ND_ME;\n");
+	   $outp=substr($outp,$ind+2);
+	   if(strlen($outp)>3&&substr($outp,0,3)=='php')  $outp=substr($outp,3);
+	 };
+     if(strlen($outp)>0) $output.=eval($outp);
+	 drupal_add_js("sites/all/modules/custom/cteReportTemplateMedia/js/jquery.ui126.js");
+//	 drupal_add_js("sites/all/modules/custom/cteReportTemplateMedia/js/ui.core.1.6.js");
+	 drupal_add_js("sites/all/modules/custom/cteReportTemplateMedia/js/json/json2.js");
+	 drupal_add_js("sites/all/modules/custom/cteReportTemplateMedia/js/swfobject.js");
+	 drupal_add_js("sites/all/modules/custom/cteReportTemplateMedia/js/jquery.popup.js");
+	 drupal_add_js("sites/all/modules/custom/cteReportTemplateMedia/js/jquery.dataTables.js");
+	 drupal_add_js("sites/all/modules/custom/cteReportTemplateMedia/js/jquery.autocomplete.js");
+	 drupal_add_js("sites/all/modules/custom/cteReportTemplateMedia/js/ui.combobox.js");
+	 drupal_set_html_head('  <script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;v=2&amp;key='.variable_get('googleKey','').'"></script>', 'inline');//
+	 /*find variable_get('googleKey','') in sites/default/settings.php look for 
+	  $conf = array(
+  'googleKey'=>'ABQIAAAAZwu5vNQa6vCvjRz5Sg98aRTwij7ZE-dmuHdWQFKlnxQnih9OrRTO5oz8hZjqxjeMIymT-nkOkJh5Ng'
+  );
+
+	 */
+	 drupal_add_js("sites/all/modules/custom/cteReportTemplateMedia/js/jquery.jmap.js");
+	 drupal_add_js("sites/all/modules/custom/cteReportTemplateMedia/js/dataSetObjects.js");
+	 drupal_add_js("sites/all/modules/custom/cteReportTemplateMedia/js/TableTools.js");
+	 drupal_add_js("sites/all/modules/custom/cteReportTemplateMedia/js/ZeroClipboard/ZeroClipboard.js");
+
+     drupal_add_js("misc/collapse.js");
+	 $inclJS=<<<INC
+	 <script>var nodeTitle="$node->title";</script>
+INC;
+$popupbg=<<<POPUPBG
+     <script> //window.onerror=function(message, url, line){alert(message+"\\n"+url+":"+line);};
+	 ZeroClipboard.setMoviePath( 'sites/all/modules/custom/cteReportTemplateMedia/js/ZeroClipboard/ZeroClipboard.swf' );
+	 popupMsg=function(msg){
+	   window.setTimeout(function(){
+	    var m=msg;
+	 	$("#popup").show("fast").css("top","10px").css("left","10px");
+		$("#popup_title").click(function(){ $("#popup").hide("fast");}).css("cursor","pointer").text("Click to close...");
+		$("#popup_message").html(m);
+		},1000);
+	 }
+	 </script>
+	 <div style="opacity: 0.6;-ms-filter: 'alpha (opacity=60)'; filter: alpha (opacity=60); 1200;display:block;" id="popup_bg"></div>
+	 <div style="top: 390.5px; left: 465px;display:block;" id="popup" class="">
+	 	<span id="popup_title">Data Loading</span><a id="popup_close"> </a>
+		<div id="popup_message">Please wait...</div>
+	</div>
+POPUPBG;
+    if(drupal_get_messages('error',false)) $popupbg="";//if there is an error, don't block the screen...
+	$output=$inclJS.$popupbg.$output.'<script type="text/javascript" >$(document).ready(function(){      $("#popup").fadeOut("normal");$("#popup_bg").fadeOut("normal");});</script>';
+  };
+  $ch="";
+  $firstCh="";
+  if($src){
+    if(!$bksrc) $bksrc=$src;
+  	$chq=db_query("select link_title, b.nid, has_children from menu_links m left join book b on m.mlid=b.mlid left join book pb on m.plid=pb.mlid where pb.nid=%d order by weight, link_title", $bksrc);
+	while($rw=db_fetch_object($chq)){
+		if(!$firstCh) $firstCh=array('nid'=>$rw->nid, 'link_title'=>$rw->link_title);
+	  $ch.='<li class="'.($rw->has_children?"collapsed":"leaf").'"><a href="javascript:setLocationParam(\'report\',\''.$rw->nid.'\')">'.$rw->link_title.'</a></li>';
+	
+	};
+  	if($ch) $ch='<div id="book-navigation-60" class="book-navigation"><ul class="menu">'.$ch.'</ul>';
+	else $ch='<div id="book-navigation-60" class="book-navigation">';
+  	$chq=db_query("select sm.link_title, sb.nid, sm.has_children, pb.nid pnid from book b left join menu_links m on m.mlid=b.mlid left join menu_links sm on sm.plid=m.plid left join book sb on sb.mlid=sm.mlid left join book pb on pb.mlid=sm.plid where b.nid=%d and m.plid!=0 order by sm.weight, sm.link_title", $bksrc);
+	$up="";
+	$prv="";
+	$nxt="";
+	$curr=false;
+	$hd="";
+	while($rw=db_fetch_object($chq)){
+		if(!$up) $up=array('nid'=>$rw->pnid, 'link_title'=>'Up');
+		if(!$nxt&&$curr) $nxt=array('nid'=>$rw->nid, 'link_title'=>$rw->link_title);
+		else if($rw->nid==$bksrc) $curr=true;
+		else if(!$curr) $prv=array('nid'=>$rw->nid, 'link_title'=>$rw->link_title);
+	};
+     $ch.='<div class="page-links clear-block">';
+     if($prv) {
+	 	$ch.='<a href="javascript:setLocationParam(\'report\',\''.$prv['nid'].'\')" class="page-previous" title="Go to previous page">'.$prv['link_title'].'</a>';
+		$hd.='<link rel="prev" href="javascript:setLocationParam(\'report\',\''.$prv['nid'].'\')"/>';
+	 }
+	 else $ch.='<a class="page-previous" href=""></a>';
+     if($up) {
+		 $ch.='<a href="javascript:setLocationParam(\'report\',\''.$up['nid'].'\')" class="page-up" title="Go to parent page">Up</a>';
+		 $hd.='<link rel="up" href="javascript:setLocationParam(\'report\',\''.$up['nid'].'\')"/>';
+	 }
+	 else $ch.='<a class="page-up" href=""></a>';
+     if($nxt) {
+	 	$ch.='<a href="javascript:setLocationParam(\'report\',\''.$nxt['nid'].'\')" class="page-next" title="Go to next page">'.$nxt['link_title'].'</a>';
+		$hd.='<link rel="next" href="javascript:setLocationParam(\'report\',\''.$nxt['nid'].'\')"/>';
+	 }
+     else if($firstCh) {
+		 $ch.='<a href="javascript:setLocationParam(\'report\',\''.$firstCh['nid'].'\')" class="page-next" title="Go to next page">'.$firstCh['link_title'].'</a>';
+		$hd.='<link rel="next" href="javascript:setLocationParam(\'report\',\''.$firstCh['nid'].'\')"/>';
+	 }
+	 else $ch.='<a class="page-next" href=""></a>';
+      $ch.='</div></div>';
+	 if($hd) drupal_set_html_head($hd.'<link type="text/css" rel="stylesheet" media="all" href="/modules/book/book.css?Y" />');
+  };
+  return $output.$ch;
+}
+function getURLParam($nm){
+	$r=urldecode($_GET[$nm]);
+	if($r) return $r;
+	$r=urldecode($_POST[$nm]);
+	if($r) return $r;
+	$uri=urldecode($_SERVER["REQUEST_URI"]);
+	$uarr=explode("/",$uri);
+	$k=array_search($nm,$uarr);
+	if($k===false||count($uarr)<$k+1) return "";
+	return $uarr[$k+1];
+}
+function getURLParamArray($nm) {
+//If no parameter is passed, it will modify the $_get and $_post variables and then return all parameters as an object with keys.  Value of each key is a string or array of strings.
+//if there is  a param, it iwll return an array with all values associated with that array...
+	$post = '';
+	
+	// Try globals array
+	if (!$post && isset($_GLOBALS) && isset($_GLOBALS["HTTP_RAW_POST_DATA"]))
+		$post = $_GLOBALS["HTTP_RAW_POST_DATA"];
+	
+	// Try globals variable
+	if (!$post && isset($HTTP_RAW_POST_DATA))
+		$post = $HTTP_RAW_POST_DATA;
+	
+	// Try stream
+	if (!$post) {
+		if (!function_exists('file_get_contents')) {
+			$fp = fopen("php://input", "r");
+			if ($fp) {
+				$post = '';
+				
+				while (!feof($fp))
+				$post = fread($fp, 1024);
+				
+				fclose($fp);
+			}
+		} else {
+			$post = "" . file_get_contents("php://input");
+		}
+	}
+	
+	$raw = !empty($_SERVER['QUERY_STRING']) ? sprintf('%s&%s', $_SERVER['QUERY_STRING'], $post) : $post;
+	
+	$arr = array();
+	$pairs = explode('&', $raw);
+	
+	foreach ($pairs as $i) {
+		if (!empty($i)) {
+			list($name, $value) = explode('=', $i, 2);
+			
+			if (isset($arr[$name]) ) {
+				if (is_array($arr[$name]) ) {
+					$arr[$name][] = urldecode($value);
+				} else {
+					$arr[$name] = array($arr[$name], urldecode($value));
+				}
+			} else {
+				$arr[$name] = urldecode($value);
+			}
+		}
+	}
+	
+	if($nm){
+		if(is_array($arr[$nm])) return $arr[$nm];
+		else if(is_string($arr[$nm])) return array($arr[$nm]);
+		else return false;
+	};
+	
+	foreach ( $_POST as $key => $value ) {
+		if (is_array($arr[$key]) ) {
+			$_POST[$key] = $arr[$name];
+			$_REQUEST[$key] = $arr[$name];
+		}
+	}
+			
+	foreach ( $_GET as $key => $value ) {
+		if (is_array($arr[$key]) ) {
+			$_GET[$key] = $arr[$name];
+			$_REQUEST[$key] = $arr[$name];
+		}
+	}
+
+# optionally return result array
+	return $arr;
+
+}
+
+
+function queryReplace9s($qstr,$dbtag, $tableAlias=""){
+   if($dbtag=='') return $qstr;
+   else if(strpos($dbtag,"=")!==false) $qstr=str_replace("9=9",$dbtag,$qstr);
+   else if(strpos($dbtag,",")!==false) $qstr=str_replace("9=9",$tableAlias."program in (".$dbtag.")",$qstr);
+   else  $qstr=str_replace("9=9",$tableAlias."program=".$dbtag."",$qstr);
+   return $qstr;
+}
+function addJSVariableFromNode($varNm,$keyNode){
+	$n=node_load($keyNode);
+	if($n) return "<scr"."ipt>var ".$varNm."=".$n->body.";</scr"."ipt>";
+	else return "<scr"."ipt>alert('".$keyNode." not a valid node for Variable Import');</scr"."ipt>";
+}
+$firstDataSet=true;
+function makeDataSetInJS($qname,$qstr, $aoColumns='', $ext='cte',$asObject=false){
+    if(!IsSet($qstr)) return '';
+	if(!IsSet($qname)) $qname="data1";
+	if(!IsSet($ext)) $ext="cte";
+	db_set_active($ext);
+    $q=db_query($qstr);
+	$i=0;
+	$r="";
+	$o=array();//if $asObject is true then this object is returned instead of the string $r ...
+	global $firstDataSet;
+	$cols=array();
+	while($rw=db_fetch_array($q)){
+	  $newrw=array();//temp holder of object data...
+
+	  //if r=='' then this is the first row... so set up the dataset and initialize cteReportTemplate if necessary...
+	  if($r==""){
+	  //firstDataSet is a global flag so that preliminaty js can be initialized...
+		if($firstDataSet){
+			$r=<<<EOF
+			<script  type='text/javascript'>
+			var popup;
+			var cteReportTemplate=dataSetObjects;</script>
+EOF;
+			$firstDataSet=false;
+		};
+		$r.="			<script  type='text/javascript'>\nif(!cteReportTemplate['$qname']){\n cteReportTemplate.newTable('$qname');";
+		$sep="";
+		//set up fields...
+		$rfn="\ncteReportTemplate.$qname.fields=[";
+		if($aoColumns){
+			$flds=json_decode($aoColumns);
+			foreach($flds as $fo){
+				if(is_object($fo)&&$fo->field){
+$tmprw="";
+				  $datakey="";
+			      reset($rw);
+				  if(array_key_exists($fo->field,$rw))  $datakey=htmlspecialchars($fo->field);
+				  else{
+				    reset($rw);
+				  	foreach(array_keys($rw) as $rwk){
+$tmprw.=$rwk." :";
+						if(strtolower($rwk)==strtolower($fo->field)) {
+							  $datakey=htmlspecialchars($rwk);
+							  break;
+						};
+					};
+				  };
+				  if($datakey){
+					  $cols[]=$datakey;
+					  $rfn.=$sep.'{';
+					  $fsep="";
+					  $fo->field=strtolower($fo->field);
+					  foreach($fo as $fitem=>$fval){
+						$rfn.=$fsep.'"'.$fitem.'":"'.htmlspecialchars($fval).'"';
+						$fsep=",";
+					  };
+					  $rfn.='}';
+					  $sep=",";
+				  }
+				  else drupal_set_message("Error, column key '$fo->field' not found in query data ($tmprw)",'error');
+				}
+				else{
+					drupal_set_message("Error, key value missing field or otherwise not an object",'error');
+				};
+			};
+		}//end if field data was provided by aoColumns.. otherwise, pull from data below...
+		else{
+			foreach(array_keys($rw) as $f){
+			  $rfn.=$sep.'{"sTitle":"'.htmlspecialchars($f).'","field":"'.htmlspecialchars($f).'"}';
+			  $sep=",";
+			  $cols[]=htmlspecialchars($f);
+			};
+		};
+		$r.=$rfn;
+		$r.="];\ncteReportTemplate.$qname.data=[];\n}//end if $qname already exists\n";
+	  };//end if first roww setup ... 
+	  $sep="";
+	  $r.="cteReportTemplate.$qname.data[$i]=[";
+	  foreach($cols as $fld){
+		$f=$rw[$fld];
+		$newrw[]=$f;
+		$badChars=array("\r","\n","\\");
+		$r.=$sep.'"'.htmlspecialchars(str_replace($badChars," ",$f)).'"';
+		$sep=",";
+	  };
+	  $r.="];\n";
+	  $o[]=$newrw;//adds row into object
+	  $i++;
+	};//end while...
+	if($i==0) $r=<<<EOF
+    	<script  type='text/javascript'>
+		//alert("No data found");;		
+		var popup;
+		var cteReportTemplate=this.dataSetObjects;
+		cteReportTemplate.newTable("$qname");
+EOF;
+
+//	if($i>400) $r=''.$r.'        jQuery("#"+settings.bg_id).fadeOut("normal");        jQuery("#"+settings.main_id).fadeOut("normal");'
+	//$r=str_replace("var popup;","$.popup.show('Data Loading', 'Please wait...');",$r)."\n  $.popup.hide();";
+	$r.="</script>";
+	db_set_active('default');
+	if($asObject) return $o;
+	else return "".$r."";
+}

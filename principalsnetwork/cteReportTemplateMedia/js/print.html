@@ -1,0 +1,81 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+			<style type="text/css" title="currentStyle">
+				@import "/sites/all/modules/custom/cteReportTemplateMedia/css/dataTable.css";
+			</style>
+
+			<style type="text/css" title="currentStyle2">
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * General page setup
+ */
+@page{
+width:650;
+}
+body{
+	font: 80%/1.45em "Lucida Grande", Verdana, Arial, Helvetica, sans-serif;
+	font-size:10pt;
+	margin: 0;
+	padding: 0;
+	color: #333;
+	background-color: #fff;
+	width:650;
+}
+a{
+text-decoration:none;
+color:#666666;
+}
+.ui-tabs-panel{
+clear:left;
+}
+</style>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Untitled Document</title>
+<script type="text/javascript" src="../misc/jquery.js"></script><script type="text/javascript" src="../sites/all/modules/custom/cteReportTemplateMedia/js/json/json2.js"></script><script type="text/javascript" src="../sites/all/modules/custom/cteReportTemplateMedia/js/swfobject.js"></script><script type="text/javascript" src="../sites/all/modules/custom/cteReportTemplateMedia/js/jquery.ui126.js"></script><script type="text/javascript" src="../sites/all/modules/custom/cteReportTemplateMedia/js/jquery.dataTables.min.js"></script>
+ <script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAAZwu5vNQa6vCvjRz5Sg98aRTwij7ZE-dmuHdWQFKlnxQnih9OrRTO5oz8hZjqxjeMIymT-nkOkJh5Ng"></script>
+<script type="text/javascript" src="sites/all/modules/custom/cteReportTemplateMedia/js/jquery.jmap.js"></script>
+<script type="text/javascript" src="../sites/all/modules/custom/cteReportTemplateMedia/js/dataSetObjects.js"></script><script> 
+function ofc_ready(a){if(!$.browser.msie) $('#'+a).replaceWith("<img src='data:image/png;base64," + $('#'+a)[0].get_img_binary() + "' />");}
+var nodeList=[ ];
+var docReady=function(oldwindow){
+  var n,t;
+  
+  for(n in nodeList){
+    var nm=$("#"+nodeList[n]);
+	if(nm.length>0){
+	  var o=nm.html()+"";
+	  var args=oldwindow.dataSetObjects.templates[nodeList[n]];
+	  if(!dataSetObjects[args.dsoName]){
+	    t=dataSetObjects.newTable(args.dsoName);
+	    t.data=oldwindow.dataSetObjects[args.dsoName].data;
+	    t.fields=oldwindow.dataSetObjects[args.dsoName].fields;
+	  }
+	  else t=dataSetObjects[args.dsoName];
+	  
+	  if(args.typeName=='displayTable'){
+	    //this is a dataTable node...
+	    t.makeDisplayTable(nodeList[n]);
+	  }
+	  else if(args.typeName=='displayGraph'){
+	    t.makeDisplayGraph(nodeList[n]);
+	  }
+          else if(args.typeName=='displayMap'){
+		t.displayMap(nodeList[n]);
+	  };
+	};
+  };
+};
+$(function(){
+  if(window.opener) {
+	$("body").html(window.opener.printData);
+	document.title=window.opener.nodeTitle;
+	docReady(window.opener);
+  };
+});
+</script>
+</head>
+
+<body>
+</body>
+</html>

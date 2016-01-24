@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<!-- vim: set noexpandtab : -->
+<html lang="en">
+<head>
+	<title>ComboBox demos</title>
+	<script src = "jquery-1.2.6.js"></script>
+	<script src = "ui.core.js"></script>
+	<script src = "ui.combobox.js"></script>
+	<link rel = "stylesheet" type = "text/css" href = "ui.combobox.css" />
+</head>
+<body>
+	<h1>ComboBox demos</h1>
+	<h2>Simple combobox from array</h2>
+	<p>A custom listHTML has been provided here, so that the display doesn't have to match the value of the selection.</p>
+	<p>Also, this has autoShow set to false, which is why the drop-down doesn't automatically appear when you click on the text field.</p>
+	<p style = "position: relative">
+	<label for = "demo1">First demo: </label>
+	<input name = "field1" id = "demo1" class = "inputField" value = "Apple" 
+		title = "Resized using the 'size' attribute" size = "80" />
+	</p>
+	<p><a href = "" onclick = "alert($('#demo1').val()); return false;">Show val</a></p>
+	<script>
+		$('#demo1').combobox({
+			data: ['Apple', 'Orange', 'Pear', 'Banana', 'Kiwi', 'Grape'],
+			autoShow: false,
+			listHTML: function(val, index) {
+				return $.ui.combobox.defaults.listHTML(
+					"Option " + (index + 1) + ": " + val + "s", index);
+			}
+		});
+	</script>
+
+	<h2>Simple combobox from select</h2>
+	<p>
+	The combobox picks up the "value" attribute from each option, and uses that
+	as the value of the selection.  This lets you use different values for the
+	display vs. the actual value.
+	</p>
+	<select id = "demo2">
+		<option value = "orange">Oranges</option>
+		<option value = "apple">Apples</option>
+		<option value = "pear">Pears</option>
+		<option value = "kiwi">Kiwis</option>
+		<option value = "banana">Bananas</option>
+		<option value = "grape">Grapes</option>
+	</select>
+	<script>
+		$('#demo2').combobox();
+	</script>
+
+	<h2>Event Handling</h2>
+	<div id = "demo3Text">Text shows up here</div>
+	<div id = "demo3Menu">Menu selection shows up here</div>
+	<div id = "demo3">This is alt text, where the combobox would be</div>
+	<script>
+		$('#demo3').combobox({
+			data: ['Apples', 'Oranges', 'Pears', 'Bananas', 'Kiwis', 'Grapes'],
+			matchMiddle: false,
+			key: function(e, ui) {
+				$('#demo3Text').html(ui.value);
+			},
+			change: function(e, ui) {
+				$('#demo3Menu').html(ui.value);
+			}
+		}).bind('comboboxselect', function(e, ui) {
+			alert((ui.isCustom ? 'Custom' : 'Element ' + ui.index) + ': ' + ui.value);
+		});
+	</script>
+	<h2 style = "z-index: 10">Enable/Disable/Destroy</h2>
+	<p id = "demo4">This is alt text, where the combobox would be</p>
+	<p>
+		<a href = "" onclick = "$('#demo4').combobox('enable'); return false">Enable</a> |
+		<a href = "" onclick = "$('#demo4').combobox('disable'); return false">Disable</a> |
+		<a href = "" onclick = "$('#demo4').combobox('destroy'); return false">Destroy</a> |
+		<a href = "" onclick = "$('#demo4').remove(); return false">Remove</a> |
+		<a href = "" onclick = "addItem(); return false">Add Item</a>
+	</p>
+	<script>
+		function addItem() {
+			var existing = $('#demo4').combobox('getData', 'data');
+			existing.push('Option ' + existing.length);
+			$('#demo4').combobox('setData', 'data', existing);
+		};
+
+		$('#demo4').combobox({
+			data: ['Apples', 'Oranges', 'Pears', 'Bananas', 'Kiwis', 'Grapes']
+		});
+	</script>
+
+	<h2>Images from data list</h2>
+	<p>This demonstrates how to pull values out of an external dictionary, mapping tech companies to their websites.  It also shows how to include images in the list.</p>
+	<p>
+	<input name = "field5" id = "demo5" class = "inputField" value = "Yahoo" />
+	</p>
+	<script>
+		var favicons = {
+			Google: 'http://www.google.com/favicon.ico',
+			Yahoo: 'http://www.yahoo.com/favicon.ico',
+			Microsoft: 'http://www.microsoft.com/favicon.ico',
+			Apple: 'http://www.apple.com/favicon.ico',
+			Sun: 'http://www.sun.com/favicon.ico'
+		};
+		$('#demo5').combobox({
+			data: ['Google', 'Yahoo', 'Microsoft', 'Apple', 'Sun'],
+			listHTML: function(val, index) {
+				return '<span class = "ui-combobox-item"><img src = "' + 
+					favicons[val] + '" height = "16" width = "16" />' +
+					val + '</span>';
+			}
+		});
+	</script>
+
+</body>
+</html>

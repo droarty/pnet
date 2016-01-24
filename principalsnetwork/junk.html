@@ -1,0 +1,9 @@
+<html>
+<body>
+    <a href="updatecomposites.php?baselines=t">Update Baselines</a>  This may take several minutes... but if it does not return, it is safe to rerun it.  This script will create the normalized stanine boundaries based on the data from the  entire state. It only does this for new data so if you added a year of raw data, it will create a baseline record in the isbe_tests table for each grade level and each test for that year. <b>Don't forget to add cutoff scores to isbe_tests after this step and before running composites...</b><br><br>
+<a href="updatecomposites.php?composites=t">Update Composites</a>  Run this after running baselines... This may take several minutes... but if it does not return, it is safe to rerun it.  This script will calculate all the composites for each year for each school and then do the same for math and reading.  This is stored in the schwideComposites table.<br><br>
+<a href="updatecomposites.php?growth=t">Update Growth Table</a>  Run this after updating composites.. this will generate the table of growth for the most recent year.  It will create a growth in composite, math, reading and going back one year, two, three, four, and five years.<br><br>
+<a href="updatecomposites.php?exceptions=t">Update Exceptions</a>  Run this after running baselines and composites... This may take several minutes... but if it does not return, it is safe to rerun it.  This script will determine if any combinations of filters create a sub group smaller than 10... it is not currently used for anything but could be.<br><br>
+<a href="updatecomposites.php?clearfilters=t">Clear all Filters</a>  Run this after running baselines and composites and Exceptions.. Every time you query from the public site, the new query will be run (and it may take a while) and will be stored in the filters table.  It is safe to rerun this any time.  This script dumps all old filters that are cached.<br><br>......
+</body>
+</html>

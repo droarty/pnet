@@ -1,0 +1,117 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+    
+        <title>ui.combobox.js</title>
+        <link rel="stylesheet" type="text/css" href="ui.combobox_files/jsdoc.css">
+    </head><body>
+        <h1>Module documentation for ui.combobox.js</h1>
+<p>JQuery UI combobox plugin.  This may be called on any element; the element
+ is replaced by a text field and drop-down div.  If the replaced element was
+ a select, the combobox options can be picked up from the contents of the
+ select.  Otherwise, the 'data' option must be provided to specify choice.</p>
+<p>
+</p>
+<p>
+</p>
+<p> Method names in documentation are relative to the JQuery UI infrastructure,
+ i.e. the method call is always 'combobox', and then the method name is
+ passed as the first (string) argument.</p><h2>Module</h2>
+<dl class="module">
+<dt>Author</dt><dd>Jonathan Tang</dd>
+<dt>Version</dt><dd>1.0.1</dd>
+<dt>Dependencies</dt><dd><a href="http://jonathan.tang.name/files/jquery_combobox/apidocs/jquery-1.2.6.html">jquery-1.2.6.js</a>, <a href="http://jonathan.tang.name/files/jquery_combobox/apidocs/ui.core.html">ui.core.js</a></dd>
+<dt>All Dependencies</dt><dd><a href="http://jonathan.tang.name/files/jquery_combobox/apidocs/ui.core.html">ui.core.js</a>, <a href="http://jonathan.tang.name/files/jquery_combobox/apidocs/jquery-1.2.6.html">jquery-1.2.6.js</a>, <a href="http://jonathan.tang.name/files/jquery_combobox/apidocs/ui.combobox.html">ui.combobox.js</a></dd>
+
+</dl>
+<h2>Function Index</h2>
+<dl class="functions">
+<dt><a href="#init">init</a></dt>
+<dd>Main JQuery method.</dd>
+<dt><a href="#destroy">destroy</a></dt>
+<dd>Remove all combobox functionality from this element, restoring the
+ original element.</dd>
+<dt><a href="#setData">setData</a></dt>
+<dd>Dynamically changes one of the combobox options.</dd>
+<dt><a href="#showList">showList</a></dt>
+<dd>Programmatically shows the drop-down list.</dd>
+<dt><a href="#hideList">hideList</a></dt>
+<dd>Programmatically hide the drop-down list.</dd>
+</dl><h2>Functions</h2>
+<a name="init">
+</a><div class="function">
+<h4><a name="init">init</a></h4>
+<p><a name="init">Main JQuery method.  Call $(selector).combobox(options) on any element,
+ or collection of elements, to turn them into a combobox.</a></p>
+<p>
+</p>
+<p>
+</p>
+<p><a name="init"> All event handlers take 2 arguments: the original browser event, and an
+ object with the following fields:</a></p><ul><a name="init"> 
+ </a><li><a name="init">value: the current value of the input field</a></li>
+<a name="init"> </a><li><a name="init">index: the index within the option list of the presently-selected
+ value, or -1 if directly inputted.</a></li>
+<a name="init"> </a><li><a name="init">isCustom: true if the user has typed in an option not on the list</a></li>
+<a name="init"> </a><li><a name="init">inputElement: JQuery object containing the input field</a></li>
+<a name="init"> </a><li><a name="init">listElement: JQuery object containing the drop-down list</a></li>
+<a name="init"> </a></ul><p></p>
+<h5><a name="init">Params</a></h5>
+<dl class="params"><dt><a name="init">options (Object)</a></dt><dd><a name="init">Options hash</a></dd></dl><h5><a name="init">Options</a></h5>
+<dl class="options"><dt><a name="init">data (Array<string>)</string></a></dt><dd><a name="init">List of options for the combobox
+</a></dd><dt><a name="init">autoShow (Boolean)</a></dt><dd><a name="init">If true (the default), then display the
+ drop-down whenever the input field receives focus.  Otherwise, the 
+ user must explicitly click the drop-down icon to show the list.
+</a></dd><dt><a name="init">matchMiddle (Boolean)</a></dt><dd><a name="init">If true (the default), then the combobox
+ tries to match the typed text with any portion of any of the 
+ options, instead of just the beginning.
+</a></dd><dt><a name="init">key (Function(e, ui))</a></dt><dd><a name="init">Event handler called whenever a key is
+ pressed in the input box.
+</a></dd><dt><a name="init">change (Function(e, ui))</a></dt><dd><a name="init">Event handler called whenever a new
+ option is selected on the drop-down list (eg. down/up arrows, typing in 
+ the input field).
+</a></dd><dt><a name="init">select (Function(e, ui))</a></dt><dd><a name="init">Event handler called when a selection
+ is finished (enter pressed or input field loses focus)
+</a></dd><dt><a name="init">arrowUrl (String)</a></dt><dd><a name="init">URL of the image used for the drop-down arrow.
+ Used only by the default arrowHTML function; if you override 
+ that, you don't need to supply this.  Defaults to "drop_down.png"
+</a></dd><dt><a name="init">arrowHTML (Function())</a></dt><dd><a name="init">Function that should return the HTML of
+ the element used to display the drop-down.  Defaults to an image tag.
+</a></dd><dt><a name="init">listContainerTag (String)</a></dt><dd><a name="init">Tag to hold the drop-down list element.
+</a></dd><dt><a name="init">listHTML (Function(String, Int))</a></dt><dd><a name="init">Function that takes the option
+ datum and index within the list and returns an HTML fragment for each
+ option.  Default is a span of class ui-combobox-item.</a></dd></dl>
+</div>
+
+<a name="destroy">
+</a><div class="function">
+<h4><a name="destroy">destroy</a></h4>
+<p><a name="destroy">Remove all combobox functionality from this element, restoring the
+ original element.</a></p>
+
+</div>
+
+<a name="setData">
+</a><div class="function">
+<h4><a name="setData">setData</a></h4>
+<p><a name="setData">Dynamically changes one of the combobox options.</a></p>
+<h5><a name="setData">Params</a></h5>
+<dl class="params"><dt><a name="setData">key (String)</a></dt><dd><a name="setData">Option name.
+</a></dd><dt><a name="setData">value (Object)</a></dt><dd><a name="setData">New value.</a></dd></dl>
+</div>
+
+<a name="showList">
+</a><div class="function">
+<h4><a name="showList">showList</a></h4>
+<p><a name="showList">Programmatically shows the drop-down list.</a></p>
+<h5><a name="showList">Params</a></h5>
+<dl class="params"><dt><a name="showList">e (Event)</a></dt><dd><a name="showList">Original event triggering this.</a></dd></dl>
+</div>
+
+<a name="hideList">
+</a><div class="function">
+<h4><a name="hideList">hideList</a></h4>
+<p><a name="hideList">Programmatically hide the drop-down list.</a></p>
+
+</div>
+
+<a name="hideList">    </a></body></html>
