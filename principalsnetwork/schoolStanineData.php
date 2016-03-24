@@ -1,5 +1,6 @@
 <?PHP
 include 'settings.php';
+ini_set('max_execution_time', 360); //360 seconds = 6 minutes
 
 // Create connection
 $sql = new mysqli($servername, $username, $password, $db);
@@ -322,6 +323,10 @@ select g.*,'8=8' q, '|test|' test,
    )))))))),1) oldPctEquiv,
    if(avgScore<s12,1,if(avgScore<s23,2, if(avgScore<s34,3, if(avgScore<s45,4, if(avgScore<s56,5,
      if(avgScore<s67,6,  if(avgScore<s78,7,  if(avgScore<s89,8,9)))))))) oldstanineEquivalent,
+   round(100 - (60thtotToHere-60thdeduct)/s9totToHere*100,1) paa60,
+   round(100 - (68thtotToHere-68thdeduct)/s9totToHere*100,1) paa68,
+   round((q4totToHere - q2totToHere+q2deduct)/q4totToHere*100,1) paamed,
+   q23 mss,
    round((s1totToHere-s1deduct)/s9totToHere*100,1) s1pct,
    round((s2totToHere-s2deduct-s1totToHere+s1deduct)/s9totToHere*100,1) s2pct,
    round((s3totToHere-s3deduct-s2totToHere+s2deduct)/s9totToHere*100,1) s3pct,
@@ -340,6 +345,9 @@ select g.*,'8=8' q, '|test|' test,
    round((p3totToHere-p3deduct-p2totToHere+p2deduct)/p5totToHere*100,1) p3pct,
    round((p4totToHere-p4deduct-p3totToHere+p3deduct)/p5totToHere*100,1) p4pct,
    round((p5totToHere-p4totToHere+p4deduct)/p5totToHere*100,1) p5pct,
+   round(s9totToHere - 60thtotToHere+60thdeduct,1) cntaa60,
+   round(s9totToHere - 68thtotToHere+68thdeduct,1) cntaa68,
+   round(q4totToHere - q2totToHere+q2deduct,1) cntaa50,
    round(s1totToHere-s1deduct,1) s1cnt,
    round(s2totToHere-s2deduct-s1totToHere+s1deduct,1) s2cnt,
    round(s3totToHere-s3deduct-s2totToHere+s2deduct,1) s3cnt,
@@ -370,6 +378,8 @@ select d.year, d.gradeLevel,d.year-d.gradeLevel+12 cohort,
        max(if(score<s13.exceed,totalToHere,0)) totalNotExceeding13,
        max(score) maxScore, min(score) minScore,
        sum(score*thisCnt)/sum(thisCnt) avgScore,
+       max(60th) 60th, max(if(score<=60th,totalToHere,0)) 60thtotToHere, max(if(score=60th,(1-60thpct)*thisCnt,0)) 60thdeduct,
+       max(68th) 68th, max(if(score<=68th,totalToHere,0)) 68thtotToHere, max(if(score=68th,(1-68thpct)*thisCnt,0)) 68thdeduct,
        max(s12) s12, max(if(score<=s12,totalToHere,0)) s1totToHere, max(if(score=s12,(1-s12pct)*thisCnt,0)) s1deduct,
        max(s23) s23, max(if(score<=s23,totalToHere,0)) s2totToHere, max(if(score=s23,(1-s23pct)*thisCnt,0)) s2deduct,
        max(s34) s34, max(if(score<=s34,totalToHere,0)) s3totToHere, max(if(score=s34,(1-s34pct)*thisCnt,0)) s3deduct,
@@ -426,7 +436,7 @@ QTEMP;
   }
 
 $query_for_parcc = <<<QTEMP
-select g.*,'8=8' q, 'PARCC' test,
+select g.*,'8=8' q, concat('PARCC ', subject) test,
   round((s9totToHere-totalNotMeeting)/s9totToHere*100,1) pme, s9totToHere totalCount,
   totalNotBelow totalWarning, totalNotMeeting-totalNotBelow totalBelow,totalNotExceeding-totalNotMeeting totalMeet, s9totToHere-totalNotExceeding totalExceed,
   0 pme13,
@@ -453,6 +463,10 @@ select g.*,'8=8' q, 'PARCC' test,
    )))))))),1) oldPctEquiv,
    if(avgScore<s12,1,if(avgScore<s23,2, if(avgScore<s34,3, if(avgScore<s45,4, if(avgScore<s56,5,
      if(avgScore<s67,6,  if(avgScore<s78,7,  if(avgScore<s89,8,9)))))))) oldstanineEquivalent,
+   round(100 - (60thtotToHere-60thdeduct)/s9totToHere*100,1) paa60,
+   round(100 - (68thtotToHere-68thdeduct)/s9totToHere*100,1) paa68,
+   round((q4totToHere - q2totToHere+q2deduct)/q4totToHere*100,1) paamed,
+   q23 mss,
    round((s1totToHere-s1deduct)/s9totToHere*100,1) s1pct,
    round((s2totToHere-s2deduct-s1totToHere+s1deduct)/s9totToHere*100,1) s2pct,
    round((s3totToHere-s3deduct-s2totToHere+s2deduct)/s9totToHere*100,1) s3pct,
@@ -471,6 +485,9 @@ select g.*,'8=8' q, 'PARCC' test,
    round((p3totToHere-p3deduct-p2totToHere+p2deduct)/p5totToHere*100,1) p3pct,
    round((p4totToHere-p4deduct-p3totToHere+p3deduct)/p5totToHere*100,1) p4pct,
    round((p5totToHere-p4totToHere+p4deduct)/p5totToHere*100,1) p5pct,
+   round(s9totToHere - 60thtotToHere+60thdeduct,1) cntaa60,
+   round(s9totToHere - 68thtotToHere+68thdeduct,1) cntaa68,
+   round(q4totToHere - q2totToHere+q2deduct,1) cntaa50,
    round(s1totToHere-s1deduct,1) s1cnt,
    round(s2totToHere-s2deduct-s1totToHere+s1deduct,1) s2cnt,
    round(s3totToHere-s3deduct-s2totToHere+s2deduct,1) s3cnt,
@@ -498,6 +515,8 @@ select d.year, s.gradeLevel,if(s.gradeLevel = 'HS', null, d.year-s.gradeLevel+12
        0 belowScore13, 0 meetScore13, 0 exceedScore13, 0 totalNotBelow13, 0 totalNotMeeting13, 0 totalNotExceeding13,
        max(score) maxScore, min(score) minScore,
        sum(score*thisCnt)/sum(thisCnt) avgScore,
+       max(60th) 60th, max(if(score<=60th,totalToHere,0)) 60thtotToHere, max(if(score=60th,(1-60thpct)*thisCnt,0)) 60thdeduct,
+       max(68th) 68th, max(if(score<=68th,totalToHere,0)) 68thtotToHere, max(if(score=68th,(1-68thpct)*thisCnt,0)) 68thdeduct,
        max(s12) s12, max(if(score<=s12,totalToHere,0)) s1totToHere, max(if(score=s12,(1-s12pct)*thisCnt,0)) s1deduct,
        max(s23) s23, max(if(score<=s23,totalToHere,0)) s2totToHere, max(if(score=s23,(1-s23pct)*thisCnt,0)) s2deduct,
        max(s34) s34, max(if(score<=s34,totalToHere,0)) s3totToHere, max(if(score=s34,(1-s34pct)*thisCnt,0)) s3deduct,
@@ -562,15 +581,18 @@ $q = str_replace("$queries$",$queries,$q);
 //,{"sTitle":"Old stanineAvgSS","field":"oldstanineEquivalent"},{"sTitle":"Old %ileAvgSS","field":"oldPctEquiv"}
         $colnames=<<<UINQ
 [{"sTitle":"Query","field":"q"},{"sTitle":"cdts","field":"cdts"},{"sTitle":"group","field":"label"},{"sTitle":"subject","field":"subject"},{"sTitle":"test","field":"test"}
-  ,{"sTitle":"year","field":"year"},{"sTitle":"grade","field":"gradeLevel"},{"sTitle":"cohort","field":"cohort"},{"sTitle":"maxScore","field":"maxScore"},{"sTitle":"minScore","field":"minScore"}
+  ,{"sTitle":"year","field":"year"},{"sTitle":"grade","field":"gradeLevel"},{"sTitle":"cohort","field":"cohort"},{"sTitle":"#Tst","field":"totalCount"}
+  ,{"sTitle":"maxScore","field":"maxScore"},{"sTitle":"minScore","field":"minScore"}
   ,{"sTitle":"avgScore","field":"avgScore"},{"sTitle":"zscore","field":"zscore"},{"sTitle":"stanineAvgSS","field":"stanineEquivalent"}
-  ,{"sTitle":"#Tst","field":"totalCount"},{"sTitle":"%AAAvg","field":"paaavg"},{"sTitle":"%ileAvgSS","field":"percentileEquivalent"}
+  ,{"sTitle":"%AAAvg","field":"paaavg"},{"sTitle":"%ileAvgSS","field":"percentileEquivalent"}
   ,{"sTitle":"%BQ","field":"q1pct"},{"sTitle":"%2Q","field":"q2pct"},{"sTitle":"%3Q","field":"q3pct"},{"sTitle":"%TQ","field":"q4pct"}
+  ,{"sTitle":"MedScSc","field":"mss"},{"sTitle":"%AAMed","field":"paamed"},{"sTitle":"%AA60th","field":"paa60"},{"sTitle":"%AA68th","field":"paa68"}
   ,{"sTitle":"%stn1","field":"s1pct"},{"sTitle":"%stn2","field":"s2pct"},{"sTitle":"%stn3","field":"s3pct"},{"sTitle":"%stn4","field":"s4pct"},{"sTitle":"%stn5","field":"s5pct"},{"sTitle":"%stn6","field":"s6pct"},{"sTitle":"%stn7","field":"s7pct"},{"sTitle":"%stn8","field":"s8pct"},{"sTitle":"%stn9","field":"s9pct"}
   ,{"sTitle":"%PLv1","field":"p1pct"},{"sTitle":"%PLv2","field":"p2pct"},{"sTitle":"%PLv3","field":"p3pct"},{"sTitle":"%PLv4","field":"p4pct"},{"sTitle":"%PLv5","field":"p5pct"}
   ,{"sTitle":"%ME","field":"pme"},{"sTitle":"%ME13","field":"pme13"},{"sTitle":"%AW","field":"awPct"},{"sTitle":"%Blw","field":"blPct"},{"sTitle":"%Mt","field":"mtPct"},{"sTitle":"%Ex","field":"exPct"}
   ,{"sTitle":"%AW13","field":"awPct13"},{"sTitle":"%Blw13","field":"blPct13"},{"sTitle":"%Mt13","field":"mtPct13"},{"sTitle":"%Ex13","field":"exPct13"}
   ,{"sTitle":"#BQ","field":"q1cnt"},{"sTitle":"#2Q","field":"q2cnt"},{"sTitle":"#3Q","field":"q3cnt"},{"sTitle":"#TQ","field":"q4cnt"}
+  ,{"sTitle":"cntaa50","field":"cntaa50"},{"sTitle":"cntaa60","field":"cntaa60"},{"sTitle":"cntaa68","field":"cntaa68"}
   ,{"sTitle":"s1cnt","field":"s1cnt"},{"sTitle":"s2cnt","field":"s2cnt"},{"sTitle":"s3cnt","field":"s3cnt"},{"sTitle":"s4cnt","field":"s4cnt"},{"sTitle":"s5cnt","field":"s5cnt"},{"sTitle":"s6cnt","field":"s6cnt"},{"sTitle":"s7cnt","field":"s7cnt"},{"sTitle":"s8cnt","field":"s8cnt"},{"sTitle":"s9cnt","field":"s9cnt"}
   ,{"sTitle":"p1cnt","field":"p1cnt"},{"sTitle":"p2cnt","field":"p2cnt"},{"sTitle":"p3cnt","field":"p3cnt"},{"sTitle":"p4cnt","field":"p4cnt"},{"sTitle":"p5cnt","field":"p5cnt"}
   ,{"sTitle":"#AW","field":"totalWarning"},{"sTitle":"#Blw","field":"totalBelow"},{"sTitle":"#Mt","field":"totalMeet"},{"sTitle":"#Ex","field":"totalExceed"}
@@ -587,9 +609,15 @@ $q = str_replace("$queries$",$queries,$q);
 UINQ;
 	$q=str_replace("8=8",$schName,$q);
 	$q=queryReplace9s($q,$searchStr);
-	$output.=makeDS("schISBE", $q, $colnames,'isbe');
-	$output.="var schname='".$schName."';";
-	$output.='var searchStr="'.$searchStr.'";';
+
+  if(getURLParam('query_only')) {
+    $output = $q;
+  }
+  else {
+    $output.=makeDS("schISBE", $q, $colnames,'isbe');
+    $output.="var schname='".$schName."';";
+    $output.='var searchStr="'.$searchStr.'";';
+  }
   //$output.='/*  '.$q.'  */';
 };//end schID detail request....
 

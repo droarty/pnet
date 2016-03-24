@@ -87,18 +87,17 @@ var callBk3= function (response) {
 	var cdtss=_dso.schISBE.getFieldIndex('cdts');
         var gr=_dso.schISBE.getFieldIndex('gradelevel');
 	var o={};
-	var osum=['s1cnt','s2cnt','s3cnt','s4cnt','s5cnt','s6cnt','s7cnt','s8cnt','s9cnt','q1cnt','q2cnt','q3cnt','q4cnt','p1cnt','p2cnt','p3cnt','p4cnt','p5cnt','totalwarning','totalbelow','totalmeet','totalexceed','totalwarning13','totalbelow13','totalmeet13','totalexceed13','totalcount'];
+	var osum=['cntaa60', 'cntaa68', 'cntaa50','s1cnt','s2cnt','s3cnt','s4cnt','s5cnt','s6cnt','s7cnt','s8cnt','s9cnt','q1cnt','q2cnt','q3cnt','q4cnt','p1cnt','p2cnt','p3cnt','p4cnt','p5cnt','totalwarning','totalbelow','totalmeet','totalexceed','totalwarning13','totalbelow13','totalmeet13','totalexceed13','totalcount'];
 	//for each school, for each year organize subject rows and process
 	//make object for sumScoreCnt,
 	for(var i=0;i<_dso.schISBE.data.length;i++){
 		var d=_dso.schISBE.data[i];
 
     //create names of composite based on subject and test type, these will add up results across all grades...
-    var comp_subject = d[labels];
-    if(comp_subject.substring(0,3) == "ELA") comp_subject = "ELA";
-    else if(comp_subject.substring(0,3) == "MAT") comp_subject = "MAT";
+    var comp_subject = d[subjects];
+    var comp_test = d[tests];
 		var ostr=d[schools]+"_"+comp_subject+"_"+d[years];//add this row's data to subject composite...
-		var ostrSch=d[schools]+"_"+d[tests]+"_"+d[years];//add this row's data to a test composite...
+		var ostrSch=d[schools]+"_"+comp_test+"_"+d[years];//add this row's data to a test composite...
 
     //now, if grade level is between 3 and 8 create a composite for 3-5 or 6-8...
     var ostrGr="";
@@ -110,10 +109,16 @@ var callBk3= function (response) {
         ostrGr=d[schools]+"_"+comp_subject+"_"+d[years]+"_3";//add this row's data to subject composite...
         ostrSchGr=d[schools]+"_"+d[tests]+"_"+d[years]+"_3";//add this row's data to a test composite...
     }
-    if(thisGr=="06"||thisGr=="07"||thisGr=="08"){
+    else if(thisGr=="06"||thisGr=="07"||thisGr=="08"){
         grName="6 to 8";
         ostrGr=d[schools]+"_"+comp_subject+"_"+d[years]+"_6";//add this row's data to subject composite...
         ostrSchGr=d[schools]+"_"+d[tests]+"_"+d[years]+"_6";//add this row's data to a test composite...
+    }
+    else {
+        comp_subject = d[subjects] + ' HS';
+        comp_test = d[tests] + ' HS';
+        ostr=d[schools]+"_"+comp_subject+"_"+d[years];//add this row's data to subject composite...
+        ostrSch=d[schools]+"_"+d[tests]+"_"+d[years];//add this row's data to a test composite...
     }
 
     //now define and initalize the composite types if they don't exist.. So this must be
@@ -135,7 +140,7 @@ var callBk3= function (response) {
 			o[ostrGr]={school:d[schools],cdts:d[cdtss],subject:comp_subject+" Gr "+grName,year:d[years],compIndex:-1,minscore:1000000000,maxscore:0,avgScoreTot:0,perEquivTot:0,staEquivTot:0};
 			for(var j=0;j<osum.length;j++) o[ostrGr][osum[j]]=0;
 		};
-                //check to be sure this isn't a composite that has already beeen calculated.
+      //check to be sure this isn't a composite that has already beeen calculated.
 		if(d[_dso.schISBE.getFieldIndex('label')].indexOf('Composite')>-1){
 			o[ostr].compIndex=i;
 		};
@@ -206,6 +211,7 @@ var callBk3= function (response) {
 //			else if(peq<89) seq=7;
 //			else if(peq<96) seq=8;
 //			else seq=9;
+//      'cntaa60', 'cntaa68', 'cntaa50',
 			var staeq=Math.round(o[nm]['staEquivTot']*1000/tot)/1000;
 			d[_dso.schISBE.getFieldIndex('stanineequivalent')]=staeq;
 			for(var j=1;j<=9;j++){
@@ -217,7 +223,9 @@ var callBk3= function (response) {
       for(var j=1;j<=5;j++){
         d[_dso.schISBE.getFieldIndex("p"+j+"pct")]=Math.round(o[nm]["p"+j+"cnt"]*1000/tot)/10;
       };
-			d[_dso.schISBE.getFieldIndex("awpct")]=Math.round(o[nm]["totalwarning"]*1000/tot)/10;
+      d[_dso.schISBE.getFieldIndex("paa60")]=Math.round(o[nm]["cntaa60"]*1000/tot)/10;
+      d[_dso.schISBE.getFieldIndex("paa68")]=Math.round(o[nm]["cntaa68"]*1000/tot)/10;
+      d[_dso.schISBE.getFieldIndex("paamed")]=Math.round(o[nm]["cntaa50"]*1000/tot)/10;
 			d[_dso.schISBE.getFieldIndex("blpct")]=Math.round(o[nm]["totalbelow"]*1000/tot)/10;
 			d[_dso.schISBE.getFieldIndex("mtpct")]=Math.round(o[nm]["totalmeet"]*1000/tot)/10;
 			d[_dso.schISBE.getFieldIndex("expct")]=Math.round(o[nm]["totalexceed"]*1000/tot)/10;
@@ -633,7 +641,13 @@ Examples:<br />cdts='x0162990252886' and eth=4 - for one school's Latino populat
 <tr><td><b>s6deduct</b> (s6deduct)</td><td>0.241622149837133</td><td>This is the number of tests at the sixth stanine cutoff score that are proportionally over the the 77% mark</td></tr>
 <tr><td><b>s7deduct</b> (s7deduct)</td><td>0</td><td>This is the number of tests at the first stanine cutoff score that are proportionally over the the 4% mark</td></tr>
 <tr><td><b>s8deduct</b> (s8deduct)</td><td>0</td><td>This is the number of tests at the seventh stanine cutoff score that are proportionally over the the 89% mark</td></tr>
-
+<tr><td><b>MedScSc</b> (mss)</td><td>241</td><td>Median Scale Score</td></tr>
+<tr><td><b>%AAMed</b> (paa50)</td><td>38.4</td><td>% at or above Median (which is equivalent to %AAAvg unfortunately, but different than %ileAvgSS which is more clearly named)</td></tr>
+<tr><td><b>%AA60th</b> (paa60)</td><td>22.4</td><td>% at or above 60th percentile</td></tr>
+<tr><td><b>%AA68th</b> (paa68)</td><td>17.1</td><td>% at or above 68th percentile</td></tr>
+<tr><td><b>cntaa50</b> (cntaa50)</td><td>108</td><td>count at or above median</td></tr>
+<tr><td><b>cntaa60</b> (cntaa60)</td><td>88</td><td>count at or above 60th percentile</td></tr>
+<tr><td><b>cntaa68</b> (cntaa68)</td><td>74</td><td>count at or above 68th percentile</td></tr>
 	   </table>
 	   <h2>FAQ - Frequently Asked Questions</h2>
 	   <b>Why do the counts of students in some quartile and stanine groups have decimal values?  How can there be a fraction of a student?</b><br />
