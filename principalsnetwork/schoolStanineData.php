@@ -436,7 +436,7 @@ QTEMP;
   }
 
 $query_for_parcc = <<<QTEMP
-select g.*,'8=8' q, concat('PARCC ', subject) test,
+select g.*,'8=8' q, 'PARCC' test,
   round((s9totToHere-totalNotMeeting)/s9totToHere*100,1) pme, s9totToHere totalCount,
   totalNotBelow totalWarning, totalNotMeeting-totalNotBelow totalBelow,totalNotExceeding-totalNotMeeting totalMeet, s9totToHere-totalNotExceeding totalExceed,
   0 pme13,
@@ -628,4 +628,3 @@ UINQ;
 
 
 ?>
-
