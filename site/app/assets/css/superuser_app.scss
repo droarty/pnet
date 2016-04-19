@@ -1,0 +1,68 @@
+body {
+  background-color: white;
+}
+
+.compact {
+  padding-right: 0px;
+  padding-left: 0px;
+}
+
+label input, label textarea {
+  font-weight: normal;
+}
+
+.activity-image-preview {
+  max-height: 100px;
+  max-width: 245px;
+}
+
+.student-detail-view {
+  .grade-level {
+    margin-bottom: 0px;
+    display: inline;
+  }
+
+  .form-control {
+    width: auto;
+  }
+}
+
+.table-sub-header {
+  font-weight: normal;
+  font-size: 12px;
+  display: block;
+}
+
+.project-col {
+  max-width: 150px;
+  background-color: #efefef;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.review {
+  p {
+    margin-bottom: 0px;
+  }
+  ul {
+    padding: 8px;
+  }
+  li {
+    margin-left: 12px;
+  }
+}
+
+.labeled {
+  font-weight: bold
+}
+
+.reactable-header-sortable {
+  background: url("../img/sort-arrow.png") no-repeat 100%;
+}
+
+.whitelist_view_whitelist {
+  .url_span {
+    max-width: 600px;
+    word-wrap: break-word;
+  }
+}

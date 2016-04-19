@@ -1,0 +1,17 @@
+!!! 5
+html
+  head
+    title= title
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    link(href='/css/bootstrap.min.css', rel='stylesheet', media='screen')
+  body
+  .container
+    h1 Login
+    p.lead Please login with any email that has a google account associated with it.
+    a(href="/") Return to Home Page
+    br
+    br
+    a(href="/auth/google", class="btn btn-primary") Login via Google
+
+  script(src='http://code.jquery.com/jquery.js')
+  script(src='js/bootstrap.min.js')
