@@ -1,5 +1,5 @@
 var mysqlModel = require('mysql-model');
-var db_settings = require('../config/db.js');
+var db_settings = require('../config/db.js').config();
 
 var MyAppModel = mysqlModel.createConnection(db_settings);
 

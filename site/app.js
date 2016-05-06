@@ -5,7 +5,12 @@ var fs = require('fs');
 var express = require('express');
 // var routes = require('./routes');
 var path = require('path');
-var config = require('./config/oauth.js');
+
+if (process.argv && process.argv.length > 2 && process.argv[2] == 'production') {
+  process.env.NODE_ENV = 'production'
+}
+
+var config = require('./config/oauth.js').config();
 var passport = require('./authentication.js');
 var routes_for_auth = require('./routes_for_auth');
 var routes_for_client = require('./routes_for_client');
@@ -28,16 +33,19 @@ app.configure(function() {
   app.use(express.static(__dirname + '/public'));
 });
 
-app.get('/test3', function(req, res){
-  res.send('test3');
-});
-
 routes_for_auth(app, passport);
 routes_for_client(app);
 routes_for_server(app);
 
-// port
-app.listen(1337);
-console.log('listening on :1337')
+if (ENV == 'production') {
+  // port
+  app.listen(8080);
+  console.log('listening on :8080')
+}
+else {
+  // port
+  app.listen(1337);
+  console.log('listening on :1337')
+}
 
 module.exports = app;
