@@ -8,3 +8,4 @@ node_modules
 *.out
 oauth.js
 config/db.js
+*.pem

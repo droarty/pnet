@@ -1,5 +1,5 @@
 var mysqlModel = require('mysql-model');
-var db_settings = require('../config/db.js');
+var db_settings = require('../config/db.js').config();
 
 var MyAppModel = mysqlModel.createConnection(db_settings);
 
@@ -17,14 +17,14 @@ School.findByName = function(queryString, callback) {
   school.find('all', {where: `schname like '${queryString}%'`}, callback)
 }
 
-School.findBySchoolCityOrDistrict = function(school, city, district, callback) {
+School.findBySchoolCityOrDistrict = function(schoolName, city, district, callback) {
   var school = new School()
   var separator = ''
   var primaryQuery = ''
   var secondaryQuery = ''
-  if (school && school.length > 2) {
-    primaryQuery = `schlabel like '${school}%'`
-    secondaryQuery = `schlabel like '%${school}%'`
+  if (schoolName && schoolName.length > 2) {
+    primaryQuery = `schlabel like '${schoolName}%'`
+    secondaryQuery = `schlabel like '%${schoolName}%'`
     separator = ' and '
   }
   if (city && city.length > 1) {
