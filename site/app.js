@@ -10,7 +10,6 @@ if (process.argv && process.argv.length > 2 && process.argv[2] == 'production') 
   process.env.NODE_ENV = 'production'
 }
 
-var config = require('./config/oauth.js').config();
 var passport = require('./authentication.js');
 var routes_for_auth = require('./routes_for_auth');
 var routes_for_client = require('./routes_for_client');
@@ -37,10 +36,10 @@ routes_for_auth(app, passport);
 routes_for_client(app);
 routes_for_server(app);
 
-if (ENV == 'production') {
+if (process.env.NODE_ENV == 'production') {
   // port
-  app.listen(8080);
-  console.log('listening on :8080')
+  app.listen(80);
+  console.log('listening on :80')
 }
 else {
   // port

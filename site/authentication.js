@@ -1,7 +1,7 @@
 var passport = require('passport');
 var GoogleStrategy = require('passport-google-oauth2').Strategy;
 var User = require('./models/user.js');
-var config = require('./config/oauth.js');
+var config = require('./config/oauth.js').config();
 
 passport.use(new GoogleStrategy({
   clientID: config.google.clientID,
