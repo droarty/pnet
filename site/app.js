@@ -38,8 +38,8 @@ routes_for_server(app);
 
 if (process.env.NODE_ENV == 'production') {
   // port
-  app.listen(8080);
-  console.log('listening on :8080')
+  app.listen(80);
+  console.log('listening on :80')
 }
 else {
   // port
