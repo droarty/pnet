@@ -37,6 +37,9 @@ routes_for_client(app);
 routes_for_server(app);
 
 if (process.env.NODE_ENV == 'production') {
+  process.on('uncaughtException', function (err) {
+    console.log('******** Caught exception: ' + err);
+  });
   // port
   app.listen(80);
   console.log('listening on :80')
