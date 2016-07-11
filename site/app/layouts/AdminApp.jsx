@@ -3,7 +3,7 @@ import LoginView from 'app/views/LoginView.jsx'
 
 require('app/assets/css/advanced_app.scss')
 
-let AdvancedApp = React.createClass({
+let AdminApp = React.createClass({
   getInitialState: function() {
     return {
       user: window.advanced_user,
@@ -35,7 +35,7 @@ let AdvancedApp = React.createClass({
       <div className="container">
         <div className="row">
           <div className="col-xs-8">
-            <h3 className="pull-left">Advanced Search</h3>
+            <h3 className="pull-left">Admin View</h3>
           </div>
           <div className="col-xs-4">
             <div className="pull-right">
@@ -54,4 +54,4 @@ let AdvancedApp = React.createClass({
   }
 })
 
-module.exports = AdvancedApp
+module.exports = AdminApp

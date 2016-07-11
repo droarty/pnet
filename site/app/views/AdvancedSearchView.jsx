@@ -50,6 +50,7 @@ let AdvancedSearchView = React.createClass({
 
     return (
       <div>
+        <h1>Advanced Search</h1>
         <div>
           <span className="input-item">
             School: <input type="text" ref="school" value={this.state.school} onChange={this.onChangeSchool}/>
