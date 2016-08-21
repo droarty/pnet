@@ -10,7 +10,7 @@
 6 silly lifecycle client@0.0.0~prebuild-dev: no script for prebuild-dev, continuing
 7 info lifecycle client@0.0.0~build-dev: client@0.0.0
 8 verbose lifecycle client@0.0.0~build-dev: unsafe-perm in lifecycle true
-9 verbose lifecycle client@0.0.0~build-dev: PATH: /Users/droarty/pnet/node_modules/npm/bin/node-gyp-bin:/Users/droarty/pnet/node_modules/.bin:./node_modules/.bin:./node_modules/.bin:/Users/droarty/.rvm/gems/ruby-2.2.0/bin:/Users/droarty/.rvm/gems/ruby-2.2.0@global/bin:/Users/droarty/.rvm/rubies/ruby-2.2.0/bin:/usr/local/heroku/bin:/Users/droarty/bin:/usr/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin:/Users/droarty/.rvm/bin:/Users/droarty/bin:/Users/droarty/arcanist/bin/:/Users/droarty/.rvm/bin
+9 verbose lifecycle client@0.0.0~build-dev: PATH: /Users/droarty/pnet/node_modules/npm/bin/node-gyp-bin:/Users/droarty/pnet/node_modules/.bin:./node_modules/.bin:./node_modules/.bin:/Users/droarty/.rvm/gems/ruby-2.2.0/bin:/Users/droarty/.rvm/gems/ruby-2.2.0@global/bin:/Users/droarty/.rvm/rubies/ruby-2.2.0/bin:/usr/local/heroku/bin:/Users/droarty/bin:/usr/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin:./node_modules/.bin:/Users/droarty/.rvm/gems/ruby-2.2.0/bin:/Users/droarty/.rvm/gems/ruby-2.2.0@global/bin:/Users/droarty/.rvm/rubies/ruby-2.2.0/bin:/usr/local/heroku/bin:/Users/droarty/bin:/Users/droarty/.rvm/bin:/Users/droarty/arcanist/bin/:/Users/droarty/.rvm/bin:/Users/droarty/bin:/Users/droarty/arcanist/bin/:/Users/droarty/.rvm/bin
 10 verbose lifecycle client@0.0.0~build-dev: CWD: /Users/droarty/pnet
 11 silly lifecycle client@0.0.0~build-dev: Args: [ '-c',
 11 silly lifecycle   'webpack --watch --display-reasons --display-error-details --progress --colors --config config/webpack.config.js' ]
@@ -28,7 +28,7 @@
 14 verbose stack     at Process.ChildProcess._handle.onexit (internal/child_process.js:212:5)
 15 verbose pkgid client@0.0.0
 16 verbose cwd /Users/droarty/pnet
-17 error Darwin 15.4.0
+17 error Darwin 15.5.0
 18 error argv "/usr/local/Cellar/node/5.2.0/bin/node" "/Users/droarty/pnet/node_modules/.bin/npm" "run" "build-dev"
 19 error node v5.2.0
 20 error npm  v3.5.2

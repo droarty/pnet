@@ -10,8 +10,8 @@ import SourcesView from 'app/views/SourcesView.jsx'
 module.exports = (
   <Route path="/advanced" component={AdminApp}>
     <IndexRoute component={AdvancedSearchView}/>
-    <Route path="sources" component={SourcesView}/>
-    <Route path="error/:error_status" component={ErrorView}/>
+    <Route path="/advanced/sources" component={SourcesView}/>
+    <Route path="/error/:error_status" component={ErrorView}/>
     <Route path="*" component={NotFoundView}/>
   </Route>
 )

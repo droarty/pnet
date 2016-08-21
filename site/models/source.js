@@ -4,7 +4,7 @@ var db_settings = require('../config/db.js').config();
 var MyAppModel = mysqlModel.createConnection(db_settings);
 
 var Source = MyAppModel.extend({
-  tableName: "tblsitemaster",
+  tableName: "sources",
 });
 
 Source.findById = function(id, callback) {
@@ -17,46 +17,28 @@ Source.findByTableName = function(queryString, callback) {
   source.find('all', {where: `table_name like '${queryString}%'`}, callback)
 }
 
-Source.findAll = function(queryString, callback) {
+Source.findAll = function(callback) {
   var source = new Source()
   source.find('all', callback)
 }
 
-Source.findBySourceCityOrDistrict = function(sourceName, city, district, callback) {
+Source.findAllWithSummary = function(callback) {
   var source = new Source()
-  var separator = ''
-  var primaryQuery = ''
-  var secondaryQuery = ''
-  if (sourceName && sourceName.length > 2) {
-    primaryQuery = `schlabel like '${sourceName}%'`
-    secondaryQuery = `schlabel like '%${sourceName}%'`
-    separator = ' and '
-  }
-  if (city && city.length > 1) {
-    primaryQuery += separator + `city like '${city}%'`
-    secondaryQuery += separator + `city like '%${city}%'`
-    separator = 'and'
-  }
-  if (district && district.length > 0) {
-    primaryQuery += separator + `district like '${district}%'`
-    secondaryQuery += separator + `district like '%${district}%'`
-    separator = 'and'
-  }
-  var query = `select cdts, schLabel, city, district, rank from (
-  SELECT cdts, schLabel, city, district, 1 rank
-  FROM tblsitemaster
-  where ${primaryQuery}
-  union
-  SELECT cdts, schLabel, city, district, 2 rank
-  FROM tblsitemaster
-  where ${secondaryQuery}
-  ) z order by rank, schLabel, city`
-  if (primaryQuery) {
-    source.query(query, callback)
-  }
-  else {
-    callback('No results', [])
-  }
+  var query = `select * from sources`
+
+  source.query(query, function(errors, results, fields) {
+    var joinedQuery = ""
+    var sep = ""
+    results.forEach(function(source) {
+      var where = ` where ${source.score_field} is not null `
+      if (source.subject_field) {
+        where += ` and ${source.subject_field} = '${source.subject_value}' `
+      }
+      joinedQuery += `${sep}select '${source.subject}' subject, '${source.source_name}' source_name, ${source.grade_level_field} grade_level, ${source.year_field} year, count(*) cnt from ${source.table_name} ${where} group by ${source.grade_level_field}, ${source.year_field}`
+      sep = " union "
+    })
+    source.query(joinedQuery, callback)
+  })
 }
 
 module.exports = Source;

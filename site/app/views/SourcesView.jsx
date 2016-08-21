@@ -17,7 +17,7 @@ let SourcesView = React.createClass({
 
   fetchSources() {
     window.$.ajax({
-      url: `/api/sources/all`,
+      url: `/api/sources/findAllWithSummary`,
       type: 'GET',
       success: (result)=> {
         this.setState({
