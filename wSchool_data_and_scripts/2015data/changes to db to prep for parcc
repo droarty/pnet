@@ -1,0 +1,298 @@
+changes to db to prep for parcc
+in this order:
+
+update isbedetails set eth='7' where eth='6'
+update isbedetails set eth='6' where eth='5'
+update isbedetails set eth='5' where eth='15'
+update isbedetails set eth='' where eth='.'
+
+add table
+CREATE TABLE `parccdetails` (
+  `RCDTS` varchar(16) DEFAULT NULL COMMENT 'RCDTS',
+  `gradeLevel` varchar(4) DEFAULT NULL,
+  `sex` char(2) DEFAULT NULL COMMENT 'sex (1=girl, 2=boy)',
+  `eth` char(2) DEFAULT NULL COMMENT 'ethnic (1=AM Ind, 2=Asian/Pacific Isl, 3=Black,non-Hisp, 4=Hisp, 5=White, 6=Other)',
+  `IEP` char(2) DEFAULT NULL COMMENT 'iep (0 = no)',
+  `stlep` char(2) DEFAULT NULL COMMENT 'lEP Status (1=yes)',
+  `migrant` char(2) DEFAULT NULL COMMENT 'Migrant Status (1=yes)',
+  `freeLunch` char(2) DEFAULT NULL COMMENT 'Free or Reduced Lunch Status (1=yes)',
+  `ptest` varchar(16) DEFAULT NULL COMMENT '',
+  `ptestCode` varchar(16) DEFAULT NULL COMMENT '',
+  `ptestLevel` varchar(6) DEFAULT NULL COMMENT '',
+  `pscore` int(11) DEFAULT NULL COMMENT 'PARCC scale score',
+  `plevel` int(11) DEFAULT NULL COMMENT 'PARCC performance level',
+  `id` int(11) NOT NULL DEFAULT '0',
+  `year` int(11) DEFAULT NULL,
+  `cdts` varchar(15) DEFAULT NULL,
+  `cdt` varchar(15) DEFAULT NULL,
+  KEY `Index_1` (`RCDTS`),
+  KEY `Index_2` (`year`),
+  KEY `Index_3` (`gradeLevel`),
+  KEY `Index_4` (`stlep`),
+  KEY `Index_5` (`freeLunch`),
+  KEY `Index_6` (`eth`),
+  KEY `Index_7` (`sex`),
+  KEY `Index_8` (`IEP`),
+  KEY `Index_9` (`cdts`),
+  KEY `Index_10` (`ptest`),
+  KEY `Index_10` (`ptestcode`),
+  KEY `Index_11` (`cdt`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+add another table:
+CREATE TABLE `parcc_level_boundaries` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `ptestcode` VARCHAR(16) NULL,
+  `ptestlevel` VARCHAR(6) NULL,
+  `p12` DOUBLE NULL,
+  `p23` DOUBLE NULL,
+  `p34` DOUBLE NULL,
+  `p45` DOUBLE NULL,
+  PRIMARY KEY (`id`))
+
+and modify one table:
+ALTER TABLE `isbe_tests`
+ADD COLUMN `p12` INT(10) NULL AFTER `cntScore`,
+ADD COLUMN `p12pct` DOUBLE NULL AFTER `p12`,
+ADD COLUMN `p23` INT(10) NULL AFTER `p12pct`,
+ADD COLUMN `p23pct` DOUBLE NULL AFTER `p23`,
+ADD COLUMN `p34` INT(10) NULL AFTER `p23pct`,
+ADD COLUMN `p34pct` DOUBLE NULL AFTER `p34`,
+ADD COLUMN `p45` INT(10) NULL AFTER `p34pct`,
+ADD COLUMN `p45pct` DOUBLE NULL AFTER `p45`
+
+This will create the boundaries used to back-calculate parcc boundaries for ISAT years (may need to rerun in future as we get more data on where the percentile cutoff of the parcc boundaries lie)
+
+first delete:
+delete from parcc_level_boundaries
+
+then re-calculate:
+insert into parcc_level_boundaries (ptestcode, ptestlevel, p12, p23, p34, p45)
+select ptestcode, ptestlevel, p1/cnt*100 p12, (p1+p2)/cnt*100 p23, (p1+p2+p3)/cnt*100 p34, (p1+p2+p3+p4)/cnt*100 p45
+from (SELECT ptestcode, ptestLevel, count(*) cnt, sum(if(plevel=1, 1, 0)) p1, sum(if(plevel=2, 1, 0)) p2, sum(if(plevel=3, 1, 0)) p3, sum(if(plevel=4, 1, 0)) p4, sum(if(plevel=5, 1, 0)) p5
+FROM parccdetails
+where ptestLevel in ('03', '04', '05', '06', '07', '08') and ptestcode in ('ELA', 'MAT')
+group by ptestcode, ptestLevel) z
+
+# to set parcc boundaries
+update isbe_tests t inner join
+(select ptest,
+max(if(plevel=2,mnpscore,0)) p12, 0 p12pct,
+max(if(plevel=3,mnpscore,0)) p23, 0 p23pct,
+max(if(plevel=4,mnpscore,0)) p34, 0 p34pct,
+max(if(plevel=5,mnpscore,0)) p45, 0 p45pct
+from (
+select ptest, plevel, min(pscore) mnpscore, max(pscore) mxpscore from parccdetails group by ptest, plevel) z
+group by ptest) z on t.label=concat('PARCC ', z.ptest)
+set
+t.p12 = z.p12,
+t.p12pct = z.p12pct,
+t.p23 = z.p23,
+t.p23pct = z.p23pct,
+t.p34 = z.p34,
+t.p34pct = z.p34pct,
+t.p45 = z.p45,
+t.p45pct = z.p45pct
+
+# sets parcc boundaries for non-parcc tests - this is math,
+   to do reading, switch to ELA=ISAT Reading and field=rIsat
+update
+isbe_tests t
+inner join
+( select year, gradelevel,
+    max(if(p12pct >= 0 and p12pct<1, score, 0)) p12_sc,
+    max(if(p12pct >= 0 and p12pct<1, p12pct, 0)) p12pct_pct,
+    max(if(p23pct >= 0 and p23pct<1, score, 0)) p23_sc,
+    max(if(p23pct >= 0 and p23pct<1, p23pct, 0)) p23pct_pct,
+    max(if(p34pct >= 0 and p34pct<1, score, 0)) p34_sc,
+    max(if(p34pct >= 0 and p34pct<1, p34pct, 0)) p34pct_pct,
+    max(if(p45pct >= 0 and p45pct<1, score, 0)) p45_sc,
+    max(if(p45pct >= 0 and p45pct<1, p45pct, 0)) p45pct_pct
+  from (
+    /* all scores with p12pct being where p12 boundary falls between pstart and pend */
+    select *,
+      (pend - p12/100)/(pend - pstart) p12pct,
+      (pend - p23/100)/(pend - pstart) p23pct,
+      (pend - p34/100)/(pend - pstart) p34pct,
+      (pend - p45/100)/(pend - pstart) p45pct
+    from
+      /* x= all scores with pstart being proportion of the scores before this one rMATtive to total and
+        pend being proportion of scores including this rMATtive to total */
+    ( select *, (totalToHere - thisCnt)/totalCnt pstart, totalToHere/totalCnt pend from
+      /* d) get list of scores with totals of scores of equal or lower value for each grade/year...*/
+      ( select gradelevel, year, score, thisCnt, sum(cnt) totalToHere from
+        /* c) get list of scores joined with scores of equal or lower value for each grade/year...*/
+        ( select a.score, a.gradelevel, a.year, a.cnt thisCnt, b.cnt from
+          /* a= scores grouped and counted */
+          ( SELECT rIsat score, gradelevel, year, count(*) cnt FROM isbedetails i where rIsat>0
+            group by rIsat,year,gradelevel) a
+          left join
+          /* b= a second set of scores and counts to join as scores less than a.score */
+          ( SELECT rIsat score, gradelevel, year, count(*) cnt FROM isbedetails i2 where rIsat>0
+            group by rIsat,year,gradelevel) b
+          on (a.score>=b.score and a.year=b.year and a.gradelevel=b.gradelevel)
+        ) c
+        group by score, thisCnt, gradelevel, year) d
+      inner join
+      /* simple totals of all scores */
+      ( SELECT gradelevel tgrade, year tyear, count(*) totalCnt FROM isbedetails i2 where rIsat>0
+        group by year,gradelevel) e
+      on (e.tgrade=d.gradelevel and e.tyear=d.year)
+      inner join
+      /* simple list of parcc boundaries */
+      ( SELECT * FROM parcc_level_boundaries where ptestcode='ELA') bnd
+      on (bnd.ptestlevel = d.gradelevel)
+    ) x
+  ) y
+  group by year, gradelevel
+) z
+on (z.year=t.year and z.gradelevel=t.gradelevel and t.label='ISAT Reading')
+set
+p12=p12_sc, p12pct=p12pct_pct,
+p23=p23_sc, p23pct=p23pct_pct,
+p34=p34_sc, p34pct=p34pct_pct,
+p45=p45_sc, p45pct=p45pct_pct
+
+
+
+// rename schCompostites:
+ALTER TABLE `pnet`.`schwideComposites`
+RENAME TO  `pnet`.`schwideCompositesObs` ;
+
+// add new columns to revised table:
+CREATE TABLE `schwideComposites` (
+  `shortlabel` varchar(255) DEFAULT NULL,
+  `rcdts` varchar(16) DEFAULT NULL,
+  `year` int(11) DEFAULT NULL,
+  `maxMaxScore` int(11) DEFAULT NULL,
+  `minMinScore` int(11) DEFAULT NULL,
+  `wAvgScore` decimal(59,1) DEFAULT NULL,
+  `totalCount` decimal(63,0) DEFAULT NULL,
+  `wAvgPercentileEquivalent` decimal(62,1) DEFAULT NULL,
+  `PME` decimal(63,1) DEFAULT NULL,
+  `s1pct` double(18,1) DEFAULT NULL,
+  `s2pct` double(18,1) DEFAULT NULL,
+  `s3pct` double(18,1) DEFAULT NULL,
+  `s4pct` double(18,1) DEFAULT NULL,
+  `s5pct` double(18,1) DEFAULT NULL,
+  `s6pct` double(18,1) DEFAULT NULL,
+  `s7pct` double(18,1) DEFAULT NULL,
+  `s8pct` double(18,1) DEFAULT NULL,
+  `s9pct` double(18,1) DEFAULT NULL,
+  `q1pct` double(18,1) DEFAULT NULL,
+  `q2pct` double(18,1) DEFAULT NULL,
+  `q3pct` double(18,1) DEFAULT NULL,
+  `q4pct` double(18,1) DEFAULT NULL,
+  `p1pct` double(18,1) DEFAULT NULL,
+  `p2pct` double(18,1) DEFAULT NULL,
+  `p3pct` double(18,1) DEFAULT NULL,
+  `p4pct` double(18,1) DEFAULT NULL,
+  `p5pct` double(18,1) DEFAULT NULL,
+  `totalWarning` decimal(63,0) DEFAULT NULL,
+  `totalBelow` decimal(64,0) DEFAULT NULL,
+  `totalMeet` decimal(64,0) DEFAULT NULL,
+  `totalExceed` decimal(64,0) DEFAULT NULL,
+  `s1cnt` double(18,1) DEFAULT NULL,
+  `s2cnt` double(18,1) DEFAULT NULL,
+  `s3cnt` double(18,1) DEFAULT NULL,
+  `s4cnt` double(18,1) DEFAULT NULL,
+  `s5cnt` double(18,1) DEFAULT NULL,
+  `s6cnt` double(18,1) DEFAULT NULL,
+  `s7cnt` double(18,1) DEFAULT NULL,
+  `s8cnt` double(18,1) DEFAULT NULL,
+  `s9cnt` double(18,1) DEFAULT NULL,
+  `q1cnt` double(18,1) DEFAULT NULL,
+  `q2cnt` double(18,1) DEFAULT NULL,
+  `q3cnt` double(18,1) DEFAULT NULL,
+  `q4cnt` double(18,1) DEFAULT NULL,
+  `p1cnt` double(18,1) DEFAULT NULL,
+  `p2cnt` double(18,1) DEFAULT NULL,
+  `p3cnt` double(18,1) DEFAULT NULL,
+  `p4cnt` double(18,1) DEFAULT NULL,
+  `p5cnt` double(18,1) DEFAULT NULL,
+  `swid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `wAvgZScore` double DEFAULT NULL,
+  `wAvgoldPctEquiv` double DEFAULT NULL,
+  `stanine` double DEFAULT NULL,
+  `cdts` varchar(16) DEFAULT NULL,
+  `subj` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`swid`),
+  KEY `Index_2` (`rcdts`),
+  KEY `Index_4` (`wAvgPercentileEquivalent`),
+  KEY `Index_5` (`PME`),
+  KEY `Index_3` (`year`) USING BTREE,
+  KEY `Index_6` (`cdts`)
+) ENGINE=MyISAM AUTO_INCREMENT=404307 DEFAULT CHARSET=latin1;
+
+
+
+add new break points to stanine and new columns to isbe_tests
+
+
+Add 60th pctl and 68th pctl...
+for PARCC:
+update isbe_tests i inner join
+(
+select concat('PARCC ', ptest) label, year, ptestlevel gradelevel, max(totCnt) totalCnt,
+sum(if(stanine=60,score,0)) 60th, sum(if(stanine=60,thisPct,0)) 60thpct,
+sum(if(stanine=68,score,0)) 68th, sum(if(stanine=68,thisPct,0)) 68thpct,
+sum(if(stanine=11,score,0)) q12, sum(if(stanine=11,thisPct,0)) q12pct,
+sum(if(stanine=12,score,0)) q23, sum(if(stanine=12,thisPct,0)) q23pct,
+sum(if(stanine=13,score,0)) q34, sum(if(stanine=13,thisPct,0)) q34pct
+from (
+ /*#g) calculate thisPct...*/
+ select *, (thisCnt-(totalToHere-stanineCutoff))/thisCnt thisPct from (
+ /* #f) join with totalCount e, join with stanine s... determine cuttofff count... return only cutoff points..*/
+  select *, topPct*totCnt/100 stanineCutoff  from (
+/*   #d) collapse into aggregate totals...*/
+   select ptest, year, score, thisCnt, sum(cnt) totalToHere from (
+/*    #c) get list of scores joined with scores of equal or lower value for each grade/year...*/
+    select a.score, a.ptest, a.year, a.cnt thisCnt, b.score lessepscores, b.cnt from (
+     SELECT pscore score, ptest, year, count(*) cnt FROM parccdetails i where pscore>0
+       group by pscore,year,ptest) a
+     left join (
+     SELECT pscore score, ptest, year, count(*) cnt FROM parccdetails i2 where pscore>0
+           group by pscore,year,ptest) b
+     on (a.score>=b.score and a.year=b.year and a.ptest=b.ptest) ) c
+    group by score, thisCnt, ptest, year) d
+   inner join (
+    select year eyr, ptest egrd, ptestcode, ptestlevel, count(*) totCnt, min(pscore) minScore, max(pscore) maxScore FROM
+     parccdetails where pscore>0 group by year, ptest, ptestcode, ptestlevel) e
+   on (d.year=e.eyr and d.ptest=e.egrd)
+   left join stanine s on (s.topPct*e.totCnt/100) between d.totalToHere-thisCnt and totalToHere) f
+   where stanine is not null) g
+ group by year, ptestlevel, ptestcode, ptest) h
+ on (i.year=h.year and i.gradelevel=h.gradelevel and i.label=h.label)
+set i.`60th`=h.`60th`, i.`60thpct`=h.`60thpct`, i.`68th`=h.`68th`, i.`68thpct`=h.`68thpct`
+
+And for ISAT and PSAE: just keep changing out test score, risat field and label
+update isbe_tests i inner join
+(
+select ('PSAE Science' COLLATE utf8_unicode_ci) label, year, gradelevel, max(totCnt) totalCnt,
+sum(if(stanine=60,score,0)) 60th, sum(if(stanine=60,thisPct,0)) 60thpct,
+sum(if(stanine=68,score,0)) 68th, sum(if(stanine=68,thisPct,0)) 68thpct
+from (
+ /*#g) calculate thisPct...*/
+ select *, (thisCnt-(totalToHere-stanineCutoff))/thisCnt thisPct from (
+ /* #f) join with totalCount e, join with stanine s... determine cuttofff count... return only cutoff points..*/
+  select *, topPct*totCnt/100 stanineCutoff  from (
+/*   #d) collapse into aggregate totals...*/
+   select gradelevel, year, score, thisCnt, sum(cnt) totalToHere from (
+/*    #c) get list of scores joined with scores of equal or lower value for each grade/year...*/
+    select a.score, a.gradelevel, a.year, a.cnt thisCnt, b.score lessesciisats, b.cnt from (
+     SELECT sciisat score, gradelevel, year, count(*) cnt FROM isbedetails i where sciisat>0 and test='PSAE'
+       group by sciisat,year,gradelevel) a
+     left join (
+     SELECT sciisat score, gradelevel, year, count(*) cnt FROM isbedetails i2 where sciisat>0 and test='PSAE'
+           group by sciisat,year,gradelevel) b
+     on (a.score>=b.score and a.year=b.year and a.gradelevel=b.gradelevel) ) c
+    group by score, thisCnt, gradelevel, year) d
+   inner join (
+    select year eyr, gradelevel egrd, count(*) totCnt, min(sciisat) minScore, max(sciisat) maxScore FROM
+     isbedetails where sciisat>0 group by year, gradelevel) e
+   on (d.year=e.eyr and d.gradelevel=e.egrd)
+   left join stanine s on (s.topPct*e.totCnt/100) between d.totalToHere-thisCnt and totalToHere) f
+   where stanine is not null) g
+ group by year, gradelevel) h
+ on (i.year=h.year and i.gradelevel=h.gradelevel and i.label=h.label)
+set i.`60th`=h.`60th`, i.`60thpct`=h.`60thpct`, i.`68th`=h.`68th`, i.`68thpct`=h.`68thpct`
