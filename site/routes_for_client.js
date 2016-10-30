@@ -5,9 +5,20 @@ routes_for_client = function(app) {
   app.get('/', function(req, res) {
     res.render('index', { title: "Welcome to the UIC Principal's Network"});
   });
-
+/*
   app.get('/advanced*', ensureAuthenticated, function(req, res){
     User.findById(req.session.passport.user, function(err, user) {
+      if(err) {
+        console.log(err);  // handle errors
+        res.render('login', {err: err})
+      } else {
+        res.render('advanced', { user: user});
+      }
+    });
+  });
+*/
+  app.get('/advanced*', function(req, res){
+    User.findById(1, function(err, user) {
       if(err) {
         console.log(err);  // handle errors
         res.render('login', {err: err})

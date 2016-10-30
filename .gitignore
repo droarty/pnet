@@ -4,3 +4,7 @@
 /2015data/
 /old_data/
 /woSchool_data_and_scripts/
+.log
+/site/public/static/
+id_rsa
+/data_requests/

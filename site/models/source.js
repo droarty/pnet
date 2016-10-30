@@ -22,6 +22,12 @@ Source.findAll = function(callback) {
   source.find('all', callback)
 }
 
+Source.save = function(sourceData, callback) {
+  var source = new Source(sourceData)
+  if (sourceData.id) source.set(sourceData.id)
+  source.save(callback)
+}
+
 Source.findAllWithSummary = function(callback) {
   var source = new Source()
   var query = `select * from sources`

@@ -40,7 +40,7 @@ let AdminApp = React.createClass({
           <div className="col-xs-4">
             <div className="pull-right">
               <span>User: {this.state.user.name} </span>
-              <button type="button" className="btn btn-default btn-xs">Logout</button>
+              <a href="/logout" className="btn btn-default btn-xs">Logout</a>
             </div>
           </div>
         </div>

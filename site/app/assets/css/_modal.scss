@@ -1,0 +1,13 @@
+.modal-background {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1040;
+  display: block;
+  overflow: auto;
+  overflow-y: scroll;
+  padding: 5%;
+  background-color: rgba(229,229,229, 0.85);
+}
