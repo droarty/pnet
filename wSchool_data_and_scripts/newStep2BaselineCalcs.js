@@ -106,4 +106,4 @@ set it.p12 = pd.p12, it.p12pct = 0, it.p23 = pd.p23, it.p23pct = 0,
 where tablename='parccdetails' and it.p12 is null`
 // and fix the reading/math subject
 var updateReading = `update isbe_tests set subject = 'Reading' where subject='ELA'`
-var updateMath = `update isbe_tests set subject = 'Math' where subject='MAT'`
+var updateMath = `update isbe_tests set subject='Math' where subject in ('MAT', 'ALG', 'GEO')`

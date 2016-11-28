@@ -165,7 +165,7 @@ EOF;
 };
 function makeDS($qname,$qstr, $aoColumns='', $ext='cte',$asObject=false){
   $r=makeDataSetInJS($qname,$qstr,$aoColumns,$ext,$asObject);
-  return str_replace(array('</script>',"<script>","<script  type='text/javascript'>"),'',$r);
+  return str_replace(array('</script>',"<script>", "<script type='text/javascript'>"),'',$r);
 };
 
 
