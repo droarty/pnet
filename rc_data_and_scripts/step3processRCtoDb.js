@@ -18,7 +18,7 @@ processFile = function(fn) {
 	fna = fna[0].split("_");
 	var yr="20"+fn.substring(2,4);
 	//test to see if rc data already in there...
-	connection.query("select count(*) cnt from iamfroa5_isbe.isbe_rc where yrending="+yr, function(err, rows, fields){
+	connection.query("select count(*) cnt from isbe_rc where yrending="+yr, function(err, rows, fields){
 		if(rows.length>0&&rows[0].cnt>1){
 			//then we skip this file...
 			console.log("There are already "+rows[0].cnt+" records for this year: "+yr+".  Skipping file.");
@@ -26,7 +26,7 @@ processFile = function(fn) {
 			return;
 		}
 		//get params for yr...
-		connection.query("select * from iamfroa5_isbe.isbe_rc_layout where yr="+yr+" and dbfield!='' and dbfield is not null order by rownum", function(err, rows, fields){
+		connection.query("select * from isbe_rc_layout where yr="+yr+" and dbfield!='' and dbfield is not null order by rownum", function(err, rows, fields){
 			// pull together list of fields...
 			console.log(yr+": "+rows.length);
 			var fld=[];
@@ -47,7 +47,7 @@ processFile = function(fn) {
 					var chunk = buff.toString().substring(0,bytesRead);// on last loop need to limit to bytesRead to avoid picking up loeftover data in buff...
 					var qsep = "";
 					//id, rownum, dtest, dgroup, drange, dlen, dbfield, isbefield, dtype, dstart, dend, yr, isbefieldmisc
-					var q = "insert into iamfroa5_isbe.isbe_rc ("+fldnms+" yrending,cdts) values ";
+					var q = "insert into isbe_rc ("+fldnms+" yrending,cdts) values ";
 					//console.log(k + ': got %d bytes of data', chunk.length);
 					b += chunk;
 					var ba = b.split("\n");
@@ -198,7 +198,7 @@ function CSVToArray( strData, strDelimiter ){
 	return( arrData );
 }
 
-var fpth = "/home/droarty/host/rc_files";
+var fpth = "/Users/droarty/pnet/rc_data_and_scripts";
 var fls = fs.readdirSync(fpth)
 for (var i = 0; i < fls.length; i++) {
 	console.log(fls[i]);

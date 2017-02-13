@@ -18,7 +18,7 @@ processFile = function(fn) {
 	var fna = fn.split(".");
 	fna = fna[0].split("_");
 	var yr="20"+fn.substring(2,4);
-	connection.query("select count(*) cnt from iamfroa5_isbe.isbe_rc_layout where yr="+yr,function(err, rows, fields){
+	connection.query("select count(*) cnt from isbe_rc_layout where yr="+yr,function(err, rows, fields){
 		if(rows.length>0&&parseInt(rows[0].cnt)>1){
 			console.log(yr+" is already processed.  Skipping this file.");
 			connection.end();
@@ -35,7 +35,7 @@ processFile = function(fn) {
 				var chunk = buff.toString().substring(0,bytesRead);//need the bytesRead substring on the last loop so you don't pickup leftover data in the buff object ...
 				var qsep = "";
 				//id, rownum, dtest, dgroup, drange, dlen, dbfield, isbefield, dtype, dstart, dend, yr, isbefieldmisc
-				var q = "insert into iamfroa5_isbe.isbe_rc_layout (rownum, dtest, dgroup, drange, dlen, isbefield, dtype, dstart, dend, dbfield, yr, isbefieldmisc) values ";
+				var q = "insert into isbe_rc_layout (rownum, dtest, dgroup, drange, dlen, isbefield, dtype, dstart, dend, dbfield, yr, isbefieldmisc) values ";
 				//console.log(k + ': got %d bytes of data', chunk.length);
 				b += chunk;
 				var ba = b.split("\n");
@@ -177,7 +177,7 @@ function CSVToArray( strData, strDelimiter ){
 	r.on('readable', function() {
 		//if (k < 6) console.log(k + ":" + fn);
 		var chunk, qsep = "";
-		var q = "insert into iamfroa5_isbe.isbewoschools (yr,test,site,rcdts,grade,gender,race,iep,lep,migrant,frl,reading,math,science,writing,readingl,mathl,sciencel,writingl) values ";
+		var q = "insert into isbewoschools (yr,test,site,rcdts,grade,gender,race,iep,lep,migrant,frl,reading,math,science,writing,readingl,mathl,sciencel,writingl) values ";
 		while (null !== (chunk = r.read())) {
 			k++;
 			//if (k > 5) continue;
@@ -223,7 +223,7 @@ function CSVToArray( strData, strDelimiter ){
 	});
 */
 
-var fpth = "/home/droarty/host/rc_files";
+var fpth = "/Users/droarty/pnet/rc_data_and_scripts";
 var fls = fs.readdirSync(fpth)
 for (var i = 0; i < fls.length; i++) {
 	console.log(fls[i]);

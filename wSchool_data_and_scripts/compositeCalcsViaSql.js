@@ -1,3 +1,6 @@
+// used to generate yr/grd/test records as well as various composite records
+// for a particular query.. in this case we ran for each collar county.
+
 function create_files(i) {
   return function() {
     var config = require('./config.js');

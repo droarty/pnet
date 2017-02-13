@@ -11,7 +11,7 @@ console.log("starting");
 		,function(){
 			// also clean up any duplicate values in table with this query...
 
-			connection.query("delete from isbe_rc_layout where id in (select  mxid from (select yr, rownum, count(*) cnt, max(id) mxid from iamfroa5_isbe.isbe_rc_layout where dbfield!='' and dbfield is not null group by yr, rownum) z where cnt>1)");
+			connection.query("delete from isbe_rc_layout where id in (select  mxid from (select yr, rownum, count(*) cnt, max(id) mxid from isbe_rc_layout where dbfield!='' and dbfield is not null group by yr, rownum) z where cnt>1)");
 			console.log("Updated isbe_rc_layout.   All non 2014 yrs that have a isbefieldmisc that matches a 2014 isbefieldmisc where there is also a dbfield set were updated with that dbfield.")
 			connection.end();
 
